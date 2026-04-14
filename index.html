@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Decanter Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { background:#0f172a; color:white; font-family:Arial; }
+    h1 { text-align:center; }
+
+    .section {
+      margin:20px;
+      padding:20px;
+      background:#1e293b;
+      border-radius:12px;
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:15px;
+    }
+
+    .card {
+      background:#111827;
+      padding:12px;
+      border-radius:8px;
+      text-align:center;
+    }
+
+    .status {
+      background:#020617;
+      padding:10px;
+      margin-top:10px;
+      border-radius:8px;
+      font-size:14px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>⚙️ Decanter Live Dashboard</h1>
+<p id="time" style="text-align:center"></p>
+
+<!-- C-TECH 1 -->
+<div class="section">
+<h2>C-Tech 1</h2>
+<div class="grid">
+<div class="card">Level<br><span id="c1_lvl"></span></div>
+<div class="card">Inflow<br><span id="c1_flow"></span></div>
+<div class="card">Set RPM<br><span id="c1_setrpm"></span></div>
+<div class="card">Actual RPM<br><span id="c1_rpm"></span></div>
+<div class="card">Current<br><span id="c1_cur"></span></div>
+<div class="card">Power<br><span id="c1_pow"></span></div>
+<div class="card">Torque<br><span id="c1_tor"></span></div>
+<div class="card">Frequency<br><span id="c1_freq"></span></div>
+<div class="card">Cycle Total<br><span id="c1_ctot"></span></div>
+<div class="card">Cycle Remaining<br><span id="c1_crem"></span></div>
+</div>
+
+<div class="status">
+Status: <span id="c1_status"></span><br>
+Cycle State: <span id="c1_cycle"></span>
+</div>
+</div>
+
+<!-- C-TECH 2 -->
+<div class="section">
+<h2>C-Tech 2</h2>
+<div class="grid">
+<div class="card">Level<br><span id="c2_lvl"></span></div>
+<div class="card">Inflow<br><span id="c2_flow"></span></div>
+<div class="card">Set RPM<br><span id="c2_setrpm"></span></div>
+<div class="card">Actual RPM<br><span id="c2_rpm"></span></div>
+<div class="card">Current<br><span id="c2_cur"></span></div>
+<div class="card">Power<br><span id="c2_pow"></span></div>
+<div class="card">Torque<br><span id="c2_tor"></span></div>
+<div class="card">Frequency<br><span id="c2_freq"></span></div>
+<div class="card">Cycle Total<br><span id="c2_ctot"></span></div>
+<div class="card">Cycle Remaining<br><span id="c2_crem"></span></div>
+</div>
+
+<div class="status">
+Status: <span id="c2_status"></span><br>
+Cycle State: <span id="c2_cycle"></span>
+</div>
+</div>
+
+<script>
+
+// 🔴 PUT GOOGLE SHEET CSV LINK
+const sheetURL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
+
+async function fetchData() {
+  const res = await fetch(sheetURL);
+  const data = await res.text();
+
+  const rows = data.split("\n");
+  const headers = rows[0].split(",");
+
+  const last = rows[rows.length - 2].split(",");
+
+  function get(colName){
+    return last[headers.indexOf(colName)];
+  }
+
+  // C1
+  document.getElementById("c1_lvl").innerText = get("C1_Level");
+  document.getElementById("c1_flow").innerText = get("C1_Inflow");
+  document.getElementById("c1_setrpm").innerText = get("C1_SetRPM");
+  document.getElementById("c1_rpm").innerText = get("C1_ActRPM");
+  document.getElementById("c1_cur").innerText = get("C1_Current_A");
+  document.getElementById("c1_pow").innerText = get("C1_Power_kW");
+  document.getElementById("c1_tor").innerText = get("C1_Torque_Nm");
+  document.getElementById("c1_freq").innerText = get("C1_Frequency_Hz");
+  document.getElementById("c1_ctot").innerText = get("C1_CycleTot");
+  document.getElementById("c1_crem").innerText = get("C1_CycleRem");
+  document.getElementById("c1_status").innerText = get("C1_DecPos");
+  document.getElementById("c1_cycle").innerText = get("C1_CycleStat");
+
+  // C2
+  document.getElementById("c2_lvl").innerText = get("C2_Level");
+  document.getElementById("c2_flow").innerText = get("C2_Inflow");
+  document.getElementById("c2_setrpm").innerText = get("C2_SetRPM");
+  document.getElementById("c2_rpm").innerText = get("C2_ActRPM");
+  document.getElementById("c2_cur").innerText = get("C2_Current_A");
+  document.getElementById("c2_pow").innerText = get("C2_Power_kW");
+  document.getElementById("c2_tor").innerText = get("C2_Torque_Nm");
+  document.getElementById("c2_freq").innerText = get("C2_Frequency_Hz");
+  document.getElementById("c2_ctot").innerText = get("C2_CycleTot");
+  document.getElementById("c2_crem").innerText = get("C2_CycleRem");
+  document.getElementById("c2_status").innerText = get("C2_DecPos");
+  document.getElementById("c2_cycle").innerText = get("C2_CycleStat");
+
+  document.getElementById("time").innerText =
+    "Last Updated: " + new Date().toLocaleString();
+}
+
+// refresh every 60 sec
+setInterval(fetchData, 60000);
+fetchData();
+
+</script>
+
+</body>
+</html>
