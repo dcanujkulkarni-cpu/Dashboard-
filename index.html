@@ -1,105 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>SCADA Dashboard</title>
-  <style>
-    body { margin:0; font-family:Segoe UI; background:#0b1220; color:white; }
-    .container { display:flex; }
-
-    .sidebar {
-      width:250px;
-      background:#111827;
-      padding:15px;
-      height:100vh;
-    }
-
-    .main { flex:1; padding:20px; }
-
-    .section {
-      margin-bottom:30px;
-      background:#1e293b;
-      padding:15px;
-      border-radius:10px;
-    }
-
-    .grid {
-      display:grid;
-      grid-template-columns: repeat(4,1fr);
-      gap:10px;
-    }
-
-    .card {
-      background:#020617;
-      padding:10px;
-      border-radius:6px;
-      text-align:center;
-    }
-
-    .status {
-      margin-top:10px;
-      padding:8px;
-      border-radius:6px;
-      font-weight:bold;
-    }
-
-    .green { background:#065f46; }
-    .red { background:#7f1d1d; }
-    .yellow { background:#78350f; }
-
-    input, button {
-      width:100%;
-      margin:10px 0;
-      padding:8px;
-      border-radius:5px;
-      border:none;
-    }
-
-    button { background:#2563eb; color:white; cursor:pointer; }
-  </style>
-</head>
-
-<body>
-
-<div class="container">
-
-<div class="sidebar">
-<h3>📅 Select Date</h3>
-<input type="date" id="datePicker">
-
-<hr>
-
-<button onclick="openGraphPage()">📊 Open Graph Panel</button>
-</div>
-
-<div class="main">
-
-<h1>⚙️ SCADA Dashboard</h1>
-<p id="time"></p>
-
-<div class="section">
-<h2>C-Tech 1</h2>
-<div class="grid" id="c1_grid"></div>
-<div id="c1_status" class="status"></div>
-</div>
-
-<div class="section">
-<h2>C-Tech 2</h2>
-<div class="grid" id="c2_grid"></div>
-<div id="c2_status" class="status"></div>
-</div>
-
-</div>
-</div>
-
 <script>
 
 const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
 let lastValidData = null;
 
-function formatDate(dateStr){
-  let d = new Date(dateStr);
-  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+// 🚨 NO FORMAT CHANGE NOW
+function getSelectedDate(){
+  return document.getElementById("datePicker").value;
 }
 
 function getStatusColor(text){
@@ -111,30 +18,50 @@ function getStatusColor(text){
 
 async function fetchData(){
 
-  let rawDate = document.getElementById("datePicker").value;
-  if(!rawDate) return;
-
-  let url = BASE_URL + "?date=" + formatDate(rawDate);
+  let selectedDate = getSelectedDate();
 
   try {
-    let res = await fetch(url);
+
+    // 🔹 TRY SELECTED DATE FIRST
+    let res = await fetch(BASE_URL + "?date=" + selectedDate);
     let data = await res.json();
 
+    // 🚨 IF NO DATA → GET LATEST
     if(!data || data.length === 0){
-      if(lastValidData) updateUI(lastValidData, true);
+
+      console.warn("No data for selected date → loading latest");
+
+      let res2 = await fetch(BASE_URL); // no date
+      let data2 = await res2.json();
+
+      if(!data2 || data2.length === 0){
+        if(lastValidData){
+          updateUI(lastValidData, true);
+        }
+        return;
+      }
+
+      let last = data2[data2.length - 1];
+      lastValidData = last;
+
+      updateUI(last, true);
       return;
     }
 
-    let last = [...data].reverse().find(r => r["C1_Level"] || r["C2_Level"]);
-
-    if(!last) return;
+    // 🔥 NORMAL CASE
+    let last = data[data.length - 1];
 
     lastValidData = last;
 
     updateUI(last, false);
 
   } catch(e){
-    if(lastValidData) updateUI(lastValidData, true);
+
+    console.error("Fetch failed");
+
+    if(lastValidData){
+      updateUI(lastValidData, true);
+    }
   }
 }
 
@@ -146,7 +73,7 @@ function updateUI(d, stale){
 
     Object.keys(d).forEach(k=>{
       if(k.startsWith(prefix)){
-        grid.innerHTML += `<div class="card">${k}<br>${d[k]}</div>`;
+        grid.innerHTML += `<div class="card">${k}<br>${d[k] ?? "--"}</div>`;
       }
     });
   }
@@ -160,29 +87,24 @@ function updateUI(d, stale){
   c1_status.className = "status " + getStatusColor(d["C1_DecPos"]);
   c2_status.className = "status " + getStatusColor(d["C2_DecPos"]);
 
-  let timeFromData = d["Timestamp"] || d["Time"] || "No Timestamp";
+  // 🔥 ACTUAL DATA TIME
+  let dataTime = d["Timestamp"] || d["Date"] || d["Time"] || "No Timestamp";
 
   document.getElementById("time").innerText =
-    "Data Time: " + timeFromData + (stale ? " ⚠️ STALE" : "");
+    "Data Time: " + dataTime + (stale ? " ⚠️ USING LAST AVAILABLE DATA" : "");
 }
 
 function openGraphPage(){
   let date = document.getElementById("datePicker").value;
-  if(!date){
-    alert("Select date first");
-    return;
-  }
-
   window.open("graph.html?date=" + date, "_blank");
 }
 
-datePicker.valueAsDate = new Date();
-datePicker.addEventListener("change", fetchData);
+// DEFAULT TODAY
+document.getElementById("datePicker").valueAsDate = new Date();
+
+document.getElementById("datePicker").addEventListener("change", fetchData);
 
 fetchData();
 setInterval(fetchData, 60000);
 
 </script>
-
-</body>
-</html>
