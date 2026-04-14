@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Decanter Dashboard</title>
+  <title>SCADA Dashboard</title>
   <style>
     body { margin:0; font-family:Segoe UI; background:#0b1220; color:white; }
     .container { display:flex; }
@@ -78,7 +78,7 @@
 
 <div class="main">
 
-<h1>⚙️ Decanter  Dashboard</h1>
+<h1>⚙️ SCADA Dashboard</h1>
 <p id="time"></p>
 
 <div class="section">
@@ -111,15 +111,14 @@ function getStatusColor(text){
 
 async function fetchData(){
 
-  let selectedDate = document.getElementById("datePicker").value;
+  let selectedDate = document.getElementById("datePicker").value; // ✅ YYYY-MM-DD
 
   try {
 
-    // Try selected date
     let res = await fetch(BASE_URL + "?date=" + selectedDate);
     let data = await res.json();
 
-    // If no data → fetch latest
+    // 🔥 If no data → get latest
     if(!data || data.length === 0){
 
       let res2 = await fetch(BASE_URL);
@@ -132,6 +131,7 @@ async function fetchData(){
 
       let last = data2[data2.length - 1];
       lastValidData = last;
+
       updateUI(last, true);
       return;
     }
@@ -168,7 +168,7 @@ function updateUI(d, stale){
   c1_status.className = "status " + getStatusColor(d["C1_DecPos"]);
   c2_status.className = "status " + getStatusColor(d["C2_DecPos"]);
 
-  let dataTime = d["Timestamp"] || d["Date"] || d["Time"] || "No Timestamp";
+  let dataTime = d["Timestamp"] || d["Time"] || d["Date"] || "No Timestamp";
 
   document.getElementById("time").innerText =
     "Data Time: " + dataTime + (stale ? " ⚠️ LAST AVAILABLE DATA" : "");
@@ -184,11 +184,6 @@ document.getElementById("datePicker").addEventListener("change", fetchData);
 
 fetchData();
 setInterval(fetchData, 60000);
-
-</script>
-
-</body>
-</html>
 
 </script>
 
