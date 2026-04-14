@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Decanter Data Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  <title>SCADA Dashboard</title>
   <style>
     body { margin:0; font-family:Segoe UI; background:#0b1220; color:white; }
     .container { display:flex; }
@@ -48,7 +46,7 @@
     .red { background:#7f1d1d; }
     .yellow { background:#78350f; }
 
-    input, select, button {
+    input, button {
       width:100%;
       margin:10px 0;
       padding:8px;
@@ -56,11 +54,7 @@
       border:none;
     }
 
-    canvas {
-      background:white;
-      margin-top:20px;
-      border-radius:10px;
-    }
+    button { background:#2563eb; color:white; cursor:pointer; }
   </style>
 </head>
 
@@ -74,58 +68,25 @@
 
 <hr>
 
-<h3>📊 Graph Builder</h3>
-<label>X Axis</label>
-<select id="xSelect"></select>
-
-<label>Y Axis</label>
-<select id="ySelect"></select>
-
-<button onclick="plotGraph()">Plot</button>
+<button onclick="openGraphPage()">📊 Open Graph Panel</button>
 </div>
 
 <div class="main">
 
-<h1>⚙️ Decanter Dashboard</h1>
+<h1>⚙️ SCADA Dashboard</h1>
 <p id="time"></p>
 
 <div class="section">
 <h2>C-Tech 1</h2>
-<div class="grid">
-<div class="card">Level<br><span id="c1_lvl"></span></div>
-<div class="card">Inflow<br><span id="c1_flow"></span></div>
-<div class="card">Set RPM<br><span id="c1_setrpm"></span></div>
-<div class="card">Actual RPM<br><span id="c1_rpm"></span></div>
-<div class="card">Current<br><span id="c1_cur"></span></div>
-<div class="card">Power<br><span id="c1_pow"></span></div>
-<div class="card">Torque<br><span id="c1_tor"></span></div>
-<div class="card">Frequency<br><span id="c1_freq"></span></div>
-<div class="card">Cycle Total<br><span id="c1_ctot"></span></div>
-<div class="card">Cycle Remaining<br><span id="c1_crem"></span></div>
-</div>
+<div class="grid" id="c1_grid"></div>
 <div id="c1_status" class="status"></div>
-<div id="c1_cycle" class="status"></div>
 </div>
 
 <div class="section">
 <h2>C-Tech 2</h2>
-<div class="grid">
-<div class="card">Level<br><span id="c2_lvl"></span></div>
-<div class="card">Inflow<br><span id="c2_flow"></span></div>
-<div class="card">Set RPM<br><span id="c2_setrpm"></span></div>
-<div class="card">Actual RPM<br><span id="c2_rpm"></span></div>
-<div class="card">Current<br><span id="c2_cur"></span></div>
-<div class="card">Power<br><span id="c2_pow"></span></div>
-<div class="card">Torque<br><span id="c2_tor"></span></div>
-<div class="card">Frequency<br><span id="c2_freq"></span></div>
-<div class="card">Cycle Total<br><span id="c2_ctot"></span></div>
-<div class="card">Cycle Remaining<br><span id="c2_crem"></span></div>
-</div>
+<div class="grid" id="c2_grid"></div>
 <div id="c2_status" class="status"></div>
-<div id="c2_cycle" class="status"></div>
 </div>
-
-<canvas id="graph"></canvas>
 
 </div>
 </div>
@@ -134,9 +95,6 @@
 
 const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
-let dataset = [];
-let headers = [];
-let chart;
 let lastValidData = null;
 
 function formatDate(dateStr){
@@ -146,18 +104,20 @@ function formatDate(dateStr){
 
 function getStatusColor(text){
   if(!text) return "yellow";
-  if(text.includes("HEALTHY") || text.includes("RUNNING")) return "green";
+  if(text.includes("RUN") || text.includes("HEALTHY")) return "green";
   if(text.includes("DOWN") || text.includes("FAULT")) return "red";
   return "yellow";
 }
 
 async function fetchData(){
+
+  let rawDate = document.getElementById("datePicker").value;
+  if(!rawDate) return;
+
+  let url = BASE_URL + "?date=" + formatDate(rawDate);
+
   try {
-
-    let rawDate = document.getElementById("datePicker").value;
-    let formattedDate = formatDate(rawDate);
-
-    let res = await fetch(BASE_URL + "?date=" + formattedDate);
+    let res = await fetch(url);
     let data = await res.json();
 
     if(!data || data.length === 0){
@@ -165,15 +125,11 @@ async function fetchData(){
       return;
     }
 
-    dataset = data;
-
     let last = [...data].reverse().find(r => r["C1_Level"] || r["C2_Level"]);
 
     if(!last) return;
 
     lastValidData = last;
-
-    headers = Object.keys(last);
 
     updateUI(last, false);
 
@@ -184,75 +140,47 @@ async function fetchData(){
 
 function updateUI(d, stale){
 
-  function g(x){ return d[x] ?? "--"; }
+  function addCards(prefix, gridId){
+    let grid = document.getElementById(gridId);
+    grid.innerHTML = "";
 
-  // C1
-  c1_lvl.innerText=g("C1_Level");
-  c1_flow.innerText=g("C1_Inflow");
-  c1_setrpm.innerText=g("C1_SetRPM");
-  c1_rpm.innerText=g("C1_ActRPM");
-  c1_cur.innerText=g("C1_Current_A");
-  c1_pow.innerText=g("C1_Power_kW");
-  c1_tor.innerText=g("C1_Torque_Nm");
-  c1_freq.innerText=g("C1_Frequency_Hz");
-  c1_ctot.innerText=g("C1_CycleTot");
-  c1_crem.innerText=g("C1_CycleRem");
-  c1_status.innerText=g("C1_DecPos");
-  c1_cycle.innerText=g("C1_CycleStat");
+    Object.keys(d).forEach(k=>{
+      if(k.startsWith(prefix)){
+        grid.innerHTML += `<div class="card">${k}<br>${d[k]}</div>`;
+      }
+    });
+  }
 
-  // C2
-  c2_lvl.innerText=g("C2_Level");
-  c2_flow.innerText=g("C2_Inflow");
-  c2_setrpm.innerText=g("C2_SetRPM");
-  c2_rpm.innerText=g("C2_ActRPM");
-  c2_cur.innerText=g("C2_Current_A");
-  c2_pow.innerText=g("C2_Power_kW");
-  c2_tor.innerText=g("C2_Torque_Nm");
-  c2_freq.innerText=g("C2_Frequency_Hz");
-  c2_ctot.innerText=g("C2_CycleTot");
-  c2_crem.innerText=g("C2_CycleRem");
-  c2_status.innerText=g("C2_DecPos");
-  c2_cycle.innerText=g("C2_CycleStat");
+  addCards("C1_", "c1_grid");
+  addCards("C2_", "c2_grid");
 
-  c1_status.className="status "+getStatusColor(g("C1_DecPos"));
-  c2_status.className="status "+getStatusColor(g("C2_DecPos"));
+  c1_status.innerText = d["C1_DecPos"] || "--";
+  c2_status.innerText = d["C2_DecPos"] || "--";
+
+  c1_status.className = "status " + getStatusColor(d["C1_DecPos"]);
+  c2_status.className = "status " + getStatusColor(d["C2_DecPos"]);
+
+  let timeFromData = d["Timestamp"] || d["Time"] || "No Timestamp";
 
   document.getElementById("time").innerText =
-    "Last Update: " + new Date().toLocaleString() + (stale?" ⚠️ STALE":"");
-
-  populateDropdowns();
+    "Data Time: " + timeFromData + (stale ? " ⚠️ STALE" : "");
 }
 
-function populateDropdowns(){
-  xSelect.innerHTML="";
-  ySelect.innerHTML="";
-  headers.forEach(h=>{
-    xSelect.add(new Option(h,h));
-    ySelect.add(new Option(h,h));
-  });
+function openGraphPage(){
+  let date = document.getElementById("datePicker").value;
+  if(!date){
+    alert("Select date first");
+    return;
+  }
+
+  window.open("graph.html?date=" + date, "_blank");
 }
 
-function plotGraph(){
-  let x=xSelect.value, y=ySelect.value;
-
-  let pts = dataset.map(r=>({
-    x:parseFloat(r[x]),
-    y:parseFloat(r[y])
-  })).filter(p=>!isNaN(p.x)&&!isNaN(p.y));
-
-  if(chart) chart.destroy();
-
-  chart=new Chart(graph,{
-    type:"scatter",
-    data:{datasets:[{label:y+" vs "+x,data:pts}]}
-  });
-}
-
-datePicker.valueAsDate=new Date();
-datePicker.addEventListener("change",fetchData);
+datePicker.valueAsDate = new Date();
+datePicker.addEventListener("change", fetchData);
 
 fetchData();
-setInterval(fetchData,60000);
+setInterval(fetchData, 60000);
 
 </script>
 
