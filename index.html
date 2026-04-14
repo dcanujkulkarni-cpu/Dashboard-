@@ -1,13 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Decanter Dashboard</title>
+  <style>
+    body { margin:0; font-family:Segoe UI; background:#0b1220; color:white; }
+    .container { display:flex; }
+
+    .sidebar {
+      width:250px;
+      background:#111827;
+      padding:15px;
+      height:100vh;
+    }
+
+    .main { flex:1; padding:20px; }
+
+    .section {
+      margin-bottom:30px;
+      background:#1e293b;
+      padding:15px;
+      border-radius:10px;
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns: repeat(4,1fr);
+      gap:10px;
+    }
+
+    .card {
+      background:#020617;
+      padding:10px;
+      border-radius:6px;
+      text-align:center;
+      font-size:13px;
+    }
+
+    .status {
+      margin-top:10px;
+      padding:8px;
+      border-radius:6px;
+      font-weight:bold;
+    }
+
+    .green { background:#065f46; }
+    .red { background:#7f1d1d; }
+    .yellow { background:#78350f; }
+
+    input, button {
+      width:100%;
+      margin:10px 0;
+      padding:8px;
+      border-radius:5px;
+      border:none;
+    }
+
+    button {
+      background:#2563eb;
+      color:white;
+      cursor:pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="sidebar">
+<h3>📅 Select Date</h3>
+<input type="date" id="datePicker">
+
+<hr>
+
+<button onclick="openGraphPage()">📊 Open Graph Panel</button>
+</div>
+
+<div class="main">
+
+<h1>⚙️ Decanter  Dashboard</h1>
+<p id="time"></p>
+
+<div class="section">
+<h2>C-Tech 1</h2>
+<div class="grid" id="c1_grid"></div>
+<div id="c1_status" class="status"></div>
+</div>
+
+<div class="section">
+<h2>C-Tech 2</h2>
+<div class="grid" id="c2_grid"></div>
+<div id="c2_status" class="status"></div>
+</div>
+
+</div>
+</div>
+
 <script>
 
 const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
 let lastValidData = null;
-
-// 🚨 NO FORMAT CHANGE NOW
-function getSelectedDate(){
-  return document.getElementById("datePicker").value;
-}
 
 function getStatusColor(text){
   if(!text) return "yellow";
@@ -18,56 +111,44 @@ function getStatusColor(text){
 
 async function fetchData(){
 
-  let selectedDate = getSelectedDate();
+  let selectedDate = document.getElementById("datePicker").value;
 
   try {
 
-    // 🔹 TRY SELECTED DATE FIRST
+    // Try selected date
     let res = await fetch(BASE_URL + "?date=" + selectedDate);
     let data = await res.json();
 
-    // 🚨 IF NO DATA → GET LATEST
+    // If no data → fetch latest
     if(!data || data.length === 0){
 
-      console.warn("No data for selected date → loading latest");
-
-      let res2 = await fetch(BASE_URL); // no date
+      let res2 = await fetch(BASE_URL);
       let data2 = await res2.json();
 
       if(!data2 || data2.length === 0){
-        if(lastValidData){
-          updateUI(lastValidData, true);
-        }
+        if(lastValidData) updateUI(lastValidData, true);
         return;
       }
 
       let last = data2[data2.length - 1];
       lastValidData = last;
-
       updateUI(last, true);
       return;
     }
 
-    // 🔥 NORMAL CASE
     let last = data[data.length - 1];
-
     lastValidData = last;
 
     updateUI(last, false);
 
   } catch(e){
-
-    console.error("Fetch failed");
-
-    if(lastValidData){
-      updateUI(lastValidData, true);
-    }
+    if(lastValidData) updateUI(lastValidData, true);
   }
 }
 
 function updateUI(d, stale){
 
-  function addCards(prefix, gridId){
+  function render(prefix, gridId){
     let grid = document.getElementById(gridId);
     grid.innerHTML = "";
 
@@ -78,8 +159,8 @@ function updateUI(d, stale){
     });
   }
 
-  addCards("C1_", "c1_grid");
-  addCards("C2_", "c2_grid");
+  render("C1_", "c1_grid");
+  render("C2_", "c2_grid");
 
   c1_status.innerText = d["C1_DecPos"] || "--";
   c2_status.innerText = d["C2_DecPos"] || "--";
@@ -87,11 +168,10 @@ function updateUI(d, stale){
   c1_status.className = "status " + getStatusColor(d["C1_DecPos"]);
   c2_status.className = "status " + getStatusColor(d["C2_DecPos"]);
 
-  // 🔥 ACTUAL DATA TIME
   let dataTime = d["Timestamp"] || d["Date"] || d["Time"] || "No Timestamp";
 
   document.getElementById("time").innerText =
-    "Data Time: " + dataTime + (stale ? " ⚠️ USING LAST AVAILABLE DATA" : "");
+    "Data Time: " + dataTime + (stale ? " ⚠️ LAST AVAILABLE DATA" : "");
 }
 
 function openGraphPage(){
@@ -99,12 +179,18 @@ function openGraphPage(){
   window.open("graph.html?date=" + date, "_blank");
 }
 
-// DEFAULT TODAY
 document.getElementById("datePicker").valueAsDate = new Date();
-
 document.getElementById("datePicker").addEventListener("change", fetchData);
 
 fetchData();
 setInterval(fetchData, 60000);
 
 </script>
+
+</body>
+</html>
+
+</script>
+
+</body>
+</html>
