@@ -1,49 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Decanter Dashboard</title>
+  <title>SCADA Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    body { background:#0f172a; color:white; font-family:Arial; }
-    h1 { text-align:center; }
+    body { margin:0; font-family:Segoe UI; background:#0b1220; color:white; }
+    .container { display:flex; }
+
+    .sidebar {
+      width:250px;
+      background:#111827;
+      padding:15px;
+      height:100vh;
+    }
+
+    .main { flex:1; padding:20px; }
 
     .section {
-      margin:20px;
-      padding:20px;
+      margin-bottom:30px;
       background:#1e293b;
-      border-radius:12px;
+      padding:15px;
+      border-radius:10px;
     }
 
     .grid {
       display:grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap:15px;
+      grid-template-columns: repeat(4,1fr);
+      gap:10px;
     }
 
     .card {
-      background:#111827;
-      padding:12px;
-      border-radius:8px;
+      background:#020617;
+      padding:10px;
+      border-radius:6px;
       text-align:center;
     }
 
     .status {
-      background:#020617;
-      padding:10px;
       margin-top:10px;
-      border-radius:8px;
-      font-size:14px;
+      padding:8px;
+      border-radius:6px;
+      font-weight:bold;
+    }
+
+    .green { background:#065f46; }
+    .red { background:#7f1d1d; }
+    .yellow { background:#78350f; }
+
+    input, select, button {
+      width:100%;
+      margin:10px 0;
+      padding:8px;
+      border-radius:5px;
+      border:none;
+    }
+
+    canvas {
+      background:white;
+      margin-top:20px;
+      border-radius:10px;
     }
   </style>
 </head>
 
 <body>
 
-<h1>⚙️ Decanter Live Dashboard</h1>
-<p id="time" style="text-align:center"></p>
+<div class="container">
 
-<!-- C-TECH 1 -->
+<div class="sidebar">
+<h3>📅 Select Date</h3>
+<input type="date" id="datePicker">
+
+<hr>
+
+<h3>📊 Graph Builder</h3>
+<label>X Axis</label>
+<select id="xSelect"></select>
+
+<label>Y Axis</label>
+<select id="ySelect"></select>
+
+<button onclick="plotGraph()">Plot</button>
+</div>
+
+<div class="main">
+
+<h1>⚙️ SCADA Dashboard</h1>
+<p id="time"></p>
+
 <div class="section">
 <h2>C-Tech 1</h2>
 <div class="grid">
@@ -58,14 +103,10 @@
 <div class="card">Cycle Total<br><span id="c1_ctot"></span></div>
 <div class="card">Cycle Remaining<br><span id="c1_crem"></span></div>
 </div>
-
-<div class="status">
-Status: <span id="c1_status"></span><br>
-Cycle State: <span id="c1_cycle"></span>
-</div>
+<div id="c1_status" class="status"></div>
+<div id="c1_cycle" class="status"></div>
 </div>
 
-<!-- C-TECH 2 -->
 <div class="section">
 <h2>C-Tech 2</h2>
 <div class="grid">
@@ -80,66 +121,138 @@ Cycle State: <span id="c1_cycle"></span>
 <div class="card">Cycle Total<br><span id="c2_ctot"></span></div>
 <div class="card">Cycle Remaining<br><span id="c2_crem"></span></div>
 </div>
+<div id="c2_status" class="status"></div>
+<div id="c2_cycle" class="status"></div>
+</div>
 
-<div class="status">
-Status: <span id="c2_status"></span><br>
-Cycle State: <span id="c2_cycle"></span>
+<canvas id="graph"></canvas>
+
 </div>
 </div>
 
 <script>
 
-// 🔴 PUT GOOGLE SHEET CSV LINK
-const sheetURL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
+const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
-async function fetchData() {
-  const res = await fetch(sheetURL);
-  const data = await res.text();
+let dataset = [];
+let headers = [];
+let chart;
+let lastValidData = null;
 
-  const rows = data.split("\n");
-  const headers = rows[0].split(",");
-
-  const last = rows[rows.length - 2].split(",");
-
-  function get(colName){
-    return last[headers.indexOf(colName)];
-  }
-
-  // C1
-  document.getElementById("c1_lvl").innerText = get("C1_Level");
-  document.getElementById("c1_flow").innerText = get("C1_Inflow");
-  document.getElementById("c1_setrpm").innerText = get("C1_SetRPM");
-  document.getElementById("c1_rpm").innerText = get("C1_ActRPM");
-  document.getElementById("c1_cur").innerText = get("C1_Current_A");
-  document.getElementById("c1_pow").innerText = get("C1_Power_kW");
-  document.getElementById("c1_tor").innerText = get("C1_Torque_Nm");
-  document.getElementById("c1_freq").innerText = get("C1_Frequency_Hz");
-  document.getElementById("c1_ctot").innerText = get("C1_CycleTot");
-  document.getElementById("c1_crem").innerText = get("C1_CycleRem");
-  document.getElementById("c1_status").innerText = get("C1_DecPos");
-  document.getElementById("c1_cycle").innerText = get("C1_CycleStat");
-
-  // C2
-  document.getElementById("c2_lvl").innerText = get("C2_Level");
-  document.getElementById("c2_flow").innerText = get("C2_Inflow");
-  document.getElementById("c2_setrpm").innerText = get("C2_SetRPM");
-  document.getElementById("c2_rpm").innerText = get("C2_ActRPM");
-  document.getElementById("c2_cur").innerText = get("C2_Current_A");
-  document.getElementById("c2_pow").innerText = get("C2_Power_kW");
-  document.getElementById("c2_tor").innerText = get("C2_Torque_Nm");
-  document.getElementById("c2_freq").innerText = get("C2_Frequency_Hz");
-  document.getElementById("c2_ctot").innerText = get("C2_CycleTot");
-  document.getElementById("c2_crem").innerText = get("C2_CycleRem");
-  document.getElementById("c2_status").innerText = get("C2_DecPos");
-  document.getElementById("c2_cycle").innerText = get("C2_CycleStat");
-
-  document.getElementById("time").innerText =
-    "Last Updated: " + new Date().toLocaleString();
+function formatDate(dateStr){
+  let d = new Date(dateStr);
+  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
 }
 
-// refresh every 60 sec
-setInterval(fetchData, 60000);
+function getStatusColor(text){
+  if(!text) return "yellow";
+  if(text.includes("HEALTHY") || text.includes("RUNNING")) return "green";
+  if(text.includes("DOWN") || text.includes("FAULT")) return "red";
+  return "yellow";
+}
+
+async function fetchData(){
+  try {
+
+    let rawDate = document.getElementById("datePicker").value;
+    let formattedDate = formatDate(rawDate);
+
+    let res = await fetch(BASE_URL + "?date=" + formattedDate);
+    let data = await res.json();
+
+    if(!data || data.length === 0){
+      if(lastValidData) updateUI(lastValidData, true);
+      return;
+    }
+
+    dataset = data;
+
+    let last = [...data].reverse().find(r => r["C1_Level"] || r["C2_Level"]);
+
+    if(!last) return;
+
+    lastValidData = last;
+
+    headers = Object.keys(last);
+
+    updateUI(last, false);
+
+  } catch(e){
+    if(lastValidData) updateUI(lastValidData, true);
+  }
+}
+
+function updateUI(d, stale){
+
+  function g(x){ return d[x] ?? "--"; }
+
+  // C1
+  c1_lvl.innerText=g("C1_Level");
+  c1_flow.innerText=g("C1_Inflow");
+  c1_setrpm.innerText=g("C1_SetRPM");
+  c1_rpm.innerText=g("C1_ActRPM");
+  c1_cur.innerText=g("C1_Current_A");
+  c1_pow.innerText=g("C1_Power_kW");
+  c1_tor.innerText=g("C1_Torque_Nm");
+  c1_freq.innerText=g("C1_Frequency_Hz");
+  c1_ctot.innerText=g("C1_CycleTot");
+  c1_crem.innerText=g("C1_CycleRem");
+  c1_status.innerText=g("C1_DecPos");
+  c1_cycle.innerText=g("C1_CycleStat");
+
+  // C2
+  c2_lvl.innerText=g("C2_Level");
+  c2_flow.innerText=g("C2_Inflow");
+  c2_setrpm.innerText=g("C2_SetRPM");
+  c2_rpm.innerText=g("C2_ActRPM");
+  c2_cur.innerText=g("C2_Current_A");
+  c2_pow.innerText=g("C2_Power_kW");
+  c2_tor.innerText=g("C2_Torque_Nm");
+  c2_freq.innerText=g("C2_Frequency_Hz");
+  c2_ctot.innerText=g("C2_CycleTot");
+  c2_crem.innerText=g("C2_CycleRem");
+  c2_status.innerText=g("C2_DecPos");
+  c2_cycle.innerText=g("C2_CycleStat");
+
+  c1_status.className="status "+getStatusColor(g("C1_DecPos"));
+  c2_status.className="status "+getStatusColor(g("C2_DecPos"));
+
+  document.getElementById("time").innerText =
+    "Last Update: " + new Date().toLocaleString() + (stale?" ⚠️ STALE":"");
+
+  populateDropdowns();
+}
+
+function populateDropdowns(){
+  xSelect.innerHTML="";
+  ySelect.innerHTML="";
+  headers.forEach(h=>{
+    xSelect.add(new Option(h,h));
+    ySelect.add(new Option(h,h));
+  });
+}
+
+function plotGraph(){
+  let x=xSelect.value, y=ySelect.value;
+
+  let pts = dataset.map(r=>({
+    x:parseFloat(r[x]),
+    y:parseFloat(r[y])
+  })).filter(p=>!isNaN(p.x)&&!isNaN(p.y));
+
+  if(chart) chart.destroy();
+
+  chart=new Chart(graph,{
+    type:"scatter",
+    data:{datasets:[{label:y+" vs "+x,data:pts}]}
+  });
+}
+
+datePicker.valueAsDate=new Date();
+datePicker.addEventListener("change",fetchData);
+
 fetchData();
+setInterval(fetchData,60000);
 
 </script>
 
