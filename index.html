@@ -273,7 +273,7 @@
 const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
 let lastValidData = null;
-let debugVisible  = true; // open by default
+let debugVisible  = true;
 
 function toggleDebug() {
   debugVisible = !debugVisible;
@@ -313,7 +313,7 @@ function setLiveIndicator(state) {
   lbl.innerText = state === "live" ? "Live" : state === "stale" ? "Last Known" : "Error";
 }
 
-// Scans from the end, returns last row with any non-empty value
+// Get last valid row
 function getLastValidRow(rows) {
   for (let i = rows.length - 1; i >= 0; i--) {
     const r = rows[i];
@@ -322,7 +322,7 @@ function getLastValidRow(rows) {
   return rows[rows.length - 1];
 }
 
-// Case-insensitive key lookup
+// Case-insensitive getter
 function g(d, key) {
   if (d[key] !== undefined && d[key] !== null && d[key] !== "") return d[key];
   const lk = key.toLowerCase();
@@ -333,6 +333,7 @@ function g(d, key) {
 }
 
 function updateUI(d, stale) {
+  // C1
   document.getElementById("c1_lvl").innerText    = g(d,"C1_Level");
   document.getElementById("c1_flow").innerText   = g(d,"C1_Inflow");
   document.getElementById("c1_setrpm").innerText = g(d,"C1_SetRPM");
@@ -340,10 +341,11 @@ function updateUI(d, stale) {
   document.getElementById("c1_cur").innerText    = g(d,"C1_Current_A");
   document.getElementById("c1_pow").innerText    = g(d,"C1_Power_kW");
   document.getElementById("c1_tor").innerText    = g(d,"C1_Torque_Nm");
-  document.getElementById("c1_freq").innerText   = g(d,"C1_Frequency_Hz");
+  document.getElementById("c1_freq").innerText   = g(d,"C1_Freq_Hz");
   document.getElementById("c1_ctot").innerText   = g(d,"C1_CycleTot");
   document.getElementById("c1_crem").innerText   = g(d,"C1_CycleRem");
 
+  // C2
   document.getElementById("c2_lvl").innerText    = g(d,"C2_Level");
   document.getElementById("c2_flow").innerText   = g(d,"C2_Inflow");
   document.getElementById("c2_setrpm").innerText = g(d,"C2_SetRPM");
@@ -351,7 +353,7 @@ function updateUI(d, stale) {
   document.getElementById("c2_cur").innerText    = g(d,"C2_Current_A");
   document.getElementById("c2_pow").innerText    = g(d,"C2_Power_kW");
   document.getElementById("c2_tor").innerText    = g(d,"C2_Torque_Nm");
-  document.getElementById("c2_freq").innerText   = g(d,"C2_Frequency_Hz");
+  document.getElementById("c2_freq").innerText   = g(d,"C2_Freq_Hz");
   document.getElementById("c2_ctot").innerText   = g(d,"C2_CycleTot");
   document.getElementById("c2_crem").innerText   = g(d,"C2_CycleRem");
 
@@ -360,86 +362,68 @@ function updateUI(d, stale) {
   const c1c = document.getElementById("c1_cycle");
   const c2c = document.getElementById("c2_cycle");
 
-  c1s.innerText = g(d,"C1_DecPos");    c2s.innerText = g(d,"C2_DecPos");
-  c1c.innerText = g(d,"C1_CycleStat"); c2c.innerText = g(d,"C2_CycleStat");
+  c1s.innerText = g(d,"C1_DecPos");
+  c2s.innerText = g(d,"C2_DecPos");
+  c1c.innerText = g(d,"C1_Cycle");
+  c2c.innerText = g(d,"C2_Cycle");
+
   c1s.className = "status " + getStatusColor(g(d,"C1_DecPos"));
   c2s.className = "status " + getStatusColor(g(d,"C2_DecPos"));
-  c1c.className = "status " + getStatusColor(g(d,"C1_CycleStat"));
-  c2c.className = "status " + getStatusColor(g(d,"C2_CycleStat"));
+  c1c.className = "status " + getStatusColor(g(d,"C1_Cycle"));
+  c2c.className = "status " + getStatusColor(g(d,"C2_Cycle"));
 
   const ts = d["Timestamp"] || d["Time"] || d["Date"] || "No timestamp";
-  document.getElementById("time").innerText = "Last Updated: " + ts + (stale ? "  ⚠️ LAST AVAILABLE DATA" : "");
+  document.getElementById("time").innerText =
+    "Last Updated: " + ts + (stale ? " ⚠️ LAST AVAILABLE DATA" : "");
+
   setLiveIndicator(stale ? "stale" : "live");
 }
 
+// 🔥 FINAL FETCH USING POST
 async function fetchData() {
   const date = getFormattedDate();
   document.getElementById("time").innerText = "Fetching...";
 
   try {
-    const url = BASE_URL + (date ? "?date=" + date : "");
-    debugLog("🔄 Fetching: " + url, "Please wait...");
+    debugLog("🔄 Sending POST request...", { date });
 
-    const res  = await fetch(url);
+    const res = await fetch(BASE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: date })
+    });
+
     const text = await res.text();
-
-    if (!res.ok) {
-      debugLog("❌ HTTP Error " + res.status, text.substring(0, 1000));
-      setLiveIndicator("error");
-      document.getElementById("time").innerText = "HTTP Error " + res.status;
-      return;
-    }
 
     let data;
     try {
       data = JSON.parse(text);
     } catch(e) {
-      debugLog("❌ Not valid JSON. Raw response below (fix your Apps Script):", text.substring(0, 3000));
+      debugLog("❌ Not JSON response from POST", text.substring(0,2000));
       setLiveIndicator("error");
-      document.getElementById("time").innerText = "Error: API did not return JSON. See debug panel.";
+      document.getElementById("time").innerText = "POST response not JSON";
       return;
     }
 
     const rows = Array.isArray(data) ? data : [data];
 
     if (rows.length === 0) {
-      debugLog("⚠️ Empty array returned for date: " + (date || "live"), "Trying live fallback...");
-      if (date) {
-        const r2   = await fetch(BASE_URL);
-        const t2   = await r2.text();
-        const d2   = JSON.parse(t2);
-        const r2s  = Array.isArray(d2) ? d2 : [d2];
-        if (r2s.length > 0) {
-          const last = getLastValidRow(r2s);
-          lastValidData = last;
-          debugLog("⚠️ No data for selected date. Showing latest live row:", last);
-          updateUI(last, true);
-          return;
-        }
-      }
-      if (lastValidData) { updateUI(lastValidData, true); }
-      debugLog("⚠️ No data available at all.", "");
-      document.getElementById("time").innerText = "No data available.";
+      debugLog("⚠️ No data received", "");
+      document.getElementById("time").innerText = "No data";
       return;
     }
 
     const last = getLastValidRow(rows);
     lastValidData = last;
 
-    // Show all keys from the last row so you can match them
-    debugLog(
-      "✅ Success — " + rows.length + " row(s) received. Using last valid row. " +
-      "Row keys (use these exact names in the code):",
-      last
-    );
+    debugLog("✅ Data received successfully", last);
 
     updateUI(last, false);
 
   } catch(e) {
-    debugLog("❌ Fetch threw an exception: " + e.message, e.toString());
+    debugLog("❌ Fetch error: " + e.message, e.toString());
     setLiveIndicator("error");
-    document.getElementById("time").innerText = "Fetch failed: " + e.message;
-    console.error(e);
+    document.getElementById("time").innerText = "Fetch failed";
     if (lastValidData) updateUI(lastValidData, true);
   }
 }
@@ -450,6 +434,7 @@ function openGraphPage() {
 }
 
 setTodayDate();
+
 document.getElementById("datePicker").addEventListener("input", function() {
   if (/^\d{4}-\d{2}-\d{2}$/.test(this.value.trim())) fetchData();
 });
@@ -457,7 +442,6 @@ document.getElementById("datePicker").addEventListener("input", function() {
 fetchData();
 setInterval(fetchData, 60000);
 </script>
-
 
 </body>
 </html>
