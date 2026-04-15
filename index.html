@@ -258,9 +258,7 @@
         <div class="card">Cycle Remaining<span id="C2_CycleRem">--</span></div>
       </div>
       <div class="status-row">
-        <div class="status yellow" id="c2_status">--</div>
-    </div>
-
+        <div class="status yellow" id="C2_DecPos">--</div>
   </div>
 </div>
 
@@ -356,17 +354,19 @@ async function fetchData(){
   const selectedDate = getFormattedDate();
 
   try {
-    // Try selected date first (or live if no date filter)
     const url = BASE_URL + (selectedDate ? "?date=" + selectedDate : "");
+    
     const res  = await fetch(url);
-    const data = await res.json();
+    const raw  = await res.json();
+    const data = raw.data || raw;
 
-    if(!data || data.length === 0){
-      // No data for selected date → fall back to latest live data
+    if(!Array.isArray(data) || data.length === 0){
+
       const res2  = await fetch(BASE_URL);
-      const data2 = await res2.json();
+      const raw2  = await res2.json();
+      const data2 = raw2.data || raw2;
 
-      if(!data2 || data2.length === 0){
+      if(!Array.isArray(data2) || data2.length === 0){
         if(lastValidData) updateUI(lastValidData, true);
         return;
       }
@@ -377,7 +377,6 @@ async function fetchData(){
       return;
     }
 
-    // Pick last valid row from result
     const last = [...data].reverse().find(r => r["C1_Level"] || r["C2_Level"]) || data[data.length - 1];
     lastValidData = last;
     updateUI(last, false);
@@ -386,11 +385,6 @@ async function fetchData(){
     console.error("Fetch error:", e);
     if(lastValidData) updateUI(lastValidData, true);
   }
-}
-
-function openGraphPage(){
-  const date = getFormattedDate();
-  window.open("graph.html" + (date ? "?date=" + date : ""), "_blank");
 }
 
 // ── Init ──────────────────────────────────────────────────
