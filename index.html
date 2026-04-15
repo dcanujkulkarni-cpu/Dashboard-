@@ -2,200 +2,73 @@
 <html>
 <head>
   <title>Decanter Dashboard</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0b1220; color: white; }
+  .container { display: flex; min-height: 100vh; }
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0b1220;
-      color: white;
-    }
+  .sidebar {
+    width: 220px; background: #0f172a; padding: 20px 15px;
+    display: flex; flex-direction: column; gap: 12px;
+    border-right: 1px solid #1e293b;
+    position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto;
+  }
+  .sidebar h3 { font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+  .sidebar input[type="text"] {
+    width: 100%; padding: 9px 10px; background: #1e293b;
+    border: 1px solid #334155; border-radius: 6px; color: white; font-size: 14px; outline: none;
+  }
+  .sidebar input:focus { border-color: #3b82f6; }
+  .sidebar input::placeholder { color: #475569; }
+  .sidebar hr { border: none; border-top: 1px solid #1e293b; margin: 4px 0; }
+  .sidebar button {
+    width: 100%; padding: 10px; background: #2563eb; color: white;
+    border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;
+  }
+  .sidebar button:hover { background: #1d4ed8; }
+  .btn-debug { background: #7c3aed !important; }
+  .btn-debug:hover { background: #6d28d9 !important; }
 
-    .container {
-      display: flex;
-      min-height: 100vh;
-    }
+  .live-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; margin-top: auto; padding-top: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; }
+  .dot.stale { background: #f59e0b; animation: none; }
+  .dot.error { background: #ef4444; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
 
-    /* ─── SIDEBAR ─── */
-    .sidebar {
-      width: 220px;
-      background: #0f172a;
-      padding: 20px 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      border-right: 1px solid #1e293b;
-      position: fixed;
-      top: 0; left: 0;
-      height: 100vh;
-    }
+  .main { margin-left: 220px; flex: 1; padding: 24px 28px; }
+  .header { display: flex; align-items: center; margin-bottom: 6px; }
+  .header h1 { font-size: 22px; font-weight: 700; }
+  #time { font-size: 12px; color: #64748b; margin-bottom: 20px; }
 
-    .sidebar h3 {
-      font-size: 13px;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+  /* DEBUG */
+  #debugPanel {
+    background: #0f172a; border: 1px solid #7c3aed;
+    border-radius: 10px; padding: 16px; margin-bottom: 24px;
+  }
+  #debugPanel h3 { font-size: 13px; color: #a78bfa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  #debugStatus { font-size: 13px; color: #fbbf24; margin-bottom: 8px; padding: 8px 12px; background: #1e293b; border-radius: 6px; }
+  #debugRaw {
+    font-family: monospace; font-size: 12px; color: #86efac;
+    background: #020617; border-radius: 6px; padding: 12px;
+    max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+    border: 1px solid #1e293b;
+  }
 
-    .sidebar input[type="text"] {
-      width: 100%;
-      padding: 9px 10px;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 6px;
-      color: white;
-      font-size: 14px;
-      letter-spacing: 1px;
-      outline: none;
-    }
+  .section { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #273449; }
+  .section h2 { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: #e2e8f0; }
 
-    .sidebar input[type="text"]:focus {
-      border-color: #3b82f6;
-    }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .card { background: #020617; border: 1px solid #1e293b; padding: 12px 10px; border-radius: 8px; text-align: center; }
+  .card-label { font-size: 11px; color: #94a3b8; }
+  .card-unit { font-size: 10px; color: #3b82f6; background: #1e3a5f; border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
+  .card-value { display: block; margin-top: 6px; font-size: 16px; font-weight: 700; color: #f1f5f9; }
 
-    .sidebar input::placeholder { color: #475569; }
-
-    .sidebar hr {
-      border: none;
-      border-top: 1px solid #1e293b;
-      margin: 4px 0;
-    }
-
-    .sidebar button {
-      width: 100%;
-      padding: 10px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background 0.2s;
-    }
-
-    .sidebar button:hover { background: #1d4ed8; }
-
-    .live-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: auto;
-      padding-top: 10px;
-    }
-
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #22c55e;
-      animation: pulse 1.5s infinite;
-    }
-
-    .dot.stale { background: #f59e0b; animation: none; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    /* ─── MAIN ─── */
-    .main {
-      margin-left: 220px;
-      flex: 1;
-      padding: 24px 28px;
-    }
-
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 6px;
-    }
-
-    .header h1 {
-      font-size: 22px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    #time {
-      font-size: 12px;
-      color: #64748b;
-      margin-bottom: 20px;
-    }
-
-    /* ─── SECTION ─── */
-    .section {
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 24px;
-      border: 1px solid #273449;
-    }
-
-    .section h2 {
-      font-size: 17px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      color: #e2e8f0;
-    }
-
-    /* ─── GRID ─── */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .card {
-      background: #020617;
-      border: 1px solid #1e293b;
-      padding: 12px 10px;
-      border-radius: 8px;
-      text-align: center;
-      font-size: 12px;
-      color: #94a3b8;
-    }
-
-    .card span {
-      display: block;
-      margin-top: 6px;
-      font-size: 16px;
-      font-weight: 700;
-      color: #f1f5f9;
-    }
-
-    /* ─── STATUS BARS ─── */
-    .status-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .status {
-      flex: 1;
-      padding: 9px 14px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 13px;
-      text-align: center;
-      background: #78350f;
-      color: #fef3c7;
-      transition: background 0.3s;
-    }
-
-    .status.green  { background: #065f46; color: #d1fae5; }
-    .status.red    { background: #7f1d1d; color: #fee2e2; }
-    .status.yellow { background: #78350f; color: #fef3c7; }
-  </style>
+  .status-row { display: flex; gap: 10px; margin-top: 10px; }
+  .status { flex: 1; padding: 9px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; text-align: center; transition: background 0.3s; }
+  .status.green  { background: #065f46; color: #d1fae5; }
+  .status.red    { background: #7f1d1d; color: #fee2e2; }
+  .status.yellow { background: #78350f; color: #fef3c7; }
+</style>
 </head>
 
 <body>
@@ -372,51 +245,50 @@ function updateUI(d, stale) {
 }
 
 // 🔥 FINAL FETCH USING POST
-async function fetchData() {
+function fetchData() {
   const date = getFormattedDate();
   document.getElementById("time").innerText = "Fetching...";
 
   try {
-    debugLog("🔄 Sending POST request...", { date });
+    const callbackName = "handleData_" + Date.now();
 
-    const res = await fetch(BASE_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: date })
-    });
+    window[callbackName] = function(response) {
+      delete window[callbackName];
+      document.body.removeChild(script);
 
-    const text = await res.text();
+      const rows = Array.isArray(response) ? response : [response];
 
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch(e) {
-      debugLog("❌ Not JSON response from POST", text.substring(0,2000));
+      if (rows.length === 0) {
+        debugLog("⚠️ No data received", "");
+        document.getElementById("time").innerText = "No data";
+        return;
+      }
+
+      const last = getLastValidRow(rows);
+      lastValidData = last;
+
+      debugLog("✅ Data received (JSONP)", last);
+      updateUI(last, false);
+    };
+
+    const script = document.createElement("script");
+
+    let url = BASE_URL + "?callback=" + callbackName;
+    if (date) url += "&date=" + date;
+
+    script.src = url;
+
+    script.onerror = function() {
+      debugLog("❌ JSONP failed (API doesn't support callback)", "");
       setLiveIndicator("error");
-      document.getElementById("time").innerText = "POST response not JSON";
-      return;
-    }
+      document.getElementById("time").innerText = "CORS/POST issue — cannot fetch data";
+    };
 
-    const rows = Array.isArray(data) ? data : [data];
-
-    if (rows.length === 0) {
-      debugLog("⚠️ No data received", "");
-      document.getElementById("time").innerText = "No data";
-      return;
-    }
-
-    const last = getLastValidRow(rows);
-    lastValidData = last;
-
-    debugLog("✅ Data received successfully", last);
-
-    updateUI(last, false);
+    document.body.appendChild(script);
 
   } catch(e) {
-    debugLog("❌ Fetch error: " + e.message, e.toString());
+    debugLog("❌ Exception: " + e.message, e.toString());
     setLiveIndicator("error");
-    document.getElementById("time").innerText = "Fetch failed";
-    if (lastValidData) updateUI(lastValidData, true);
   }
 }
 
