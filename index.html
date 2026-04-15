@@ -242,7 +242,6 @@
       </div>
       <div class="status-row">
         <div class="status yellow" id="c1_status">--</div>
-        <div class="status yellow" id="c1_cycle">--</div>
       </div>
     </div>
 
@@ -263,7 +262,6 @@
       </div>
       <div class="status-row">
         <div class="status yellow" id="c2_status">--</div>
-        <div class="status yellow" id="c2_cycle">--</div>
       </div>
     </div>
   </div>
@@ -290,7 +288,7 @@ function getStatusColor(text) {
   if (!text || text === "--") return "yellow";
   const t = text.toUpperCase();
   if (t.includes("RUN") || t.includes("RUNNING") || t.includes("HEALTHY")) return "green";
-  if (t.includes("FAULT") || t.includes("DOWN")) return "red";
+  if (t.includes("FAULT")) return "red";
   return "yellow";
 }
 
@@ -359,18 +357,12 @@ function updateUI(d, stale) {
 
   const c1s = document.getElementById("c1_status");
   const c2s = document.getElementById("c2_status");
-  const c1c = document.getElementById("c1_cycle");
-  const c2c = document.getElementById("c2_cycle");
 
   c1s.innerText = g(d,"C1_DecPos");
   c2s.innerText = g(d,"C2_DecPos");
-  c1c.innerText = g(d,"C1_Cycle");
-  c2c.innerText = g(d,"C2_Cycle");
 
   c1s.className = "status " + getStatusColor(g(d,"C1_DecPos"));
   c2s.className = "status " + getStatusColor(g(d,"C2_DecPos"));
-  c1c.className = "status " + getStatusColor(g(d,"C1_Cycle"));
-  c2c.className = "status " + getStatusColor(g(d,"C2_Cycle"));
 
   const ts = d["Timestamp"] || d["Time"] || d["Date"] || "No timestamp";
   document.getElementById("time").innerText =
