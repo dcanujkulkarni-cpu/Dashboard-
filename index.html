@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SCADA Dashboard</title>
+  <title>Decanter Dashboard</title>
   <style>
     body { margin:0; font-family:Segoe UI; background:#0b1220; color:white; }
     .container { display:flex; }
@@ -55,6 +55,18 @@
       border:none;
     }
 
+    input[type="text"] {
+      background:#1e293b;
+      color:white;
+      font-size:14px;
+      letter-spacing:1px;
+      box-sizing:border-box;
+    }
+
+    input[type="text"]::placeholder {
+      color:#64748b;
+    }
+
     button {
       background:#2563eb;
       color:white;
@@ -68,30 +80,58 @@
 <div class="container">
 
 <div class="sidebar">
-<h3>📅 Select Date</h3>
-<input type="date" id="datePicker">
+  <h3>📅 Select Date</h3>
+  <input type="text" id="datePicker" placeholder="YYYY-MM-DD" maxlength="10">
 
-<hr>
+  <hr>
 
-<button onclick="openGraphPage()">📊 Open Graph Panel</button>
+  <button onclick="openGraphPage()">📊 Open Graph Panel</button>
 </div>
 
 <div class="main">
 
-<h1>⚙️Decanter Data Dashboard</h1>
-<p id="time"></p>
+  <h1>⚙️ Decanter Data Dashboard</h1>
+  <p id="time"></p>
 
-<div class="section">
-<h2>C-Tech 1</h2>
-<div class="grid" id="c1_grid"></div>
-<div id="c1_status" class="status"></div>
-</div>
+  <!-- C-Tech 1 -->
+  <div class="section">
+    <h2>C-Tech 1</h2>
+    <div class="grid">
+      <div class="card">Level<br><span id="c1_lvl"></span></div>
+      <div class="card">Inflow<br><span id="c1_flow"></span></div>
+      <div class="card">Set RPM<br><span id="c1_setrpm"></span></div>
+      <div class="card">Actual RPM<br><span id="c1_rpm"></span></div>
+      <div class="card">Current<br><span id="c1_cur"></span></div>
+      <div class="card">Power<br><span id="c1_pow"></span></div>
+      <div class="card">Torque<br><span id="c1_tor"></span></div>
+      <div class="card">Frequency<br><span id="c1_freq"></span></div>
+      <div class="card">Cycle Total<br><span id="c1_ctot"></span></div>
+      <div class="card">Cycle Remaining<br><span id="c1_crem"></span></div>
+    </div>
+    <div id="c1_status" class="status"></div>
+    <div id="c1_cycle" class="status"></div>
+  </div>
 
-<div class="section">
-<h2>C-Tech 2</h2>
-<div class="grid" id="c2_grid"></div>
-<div id="c2_status" class="status"></div>
-</div>
+  <!-- C-Tech 2 -->
+  <div class="section">
+    <h2>C-Tech 2</h2>
+    <div class="grid">
+      <div class="card">Level<br><span id="c2_lvl"></span></div>
+      <div class="card">Inflow<br><span id="c2_flow"></span></div>
+      <div class="card">Set RPM<br><span id="c2_setrpm"></span></div>
+      <div class="card">Actual RPM<br><span id="c2_rpm"></span></div>
+      <div class="card">Current<br><span id="c2_cur"></span></div>
+      <div class="card">Power<br><span id="c2_pow"></span></div>
+      <div class="card">Torque<br><span id="c2_tor"></span></div>
+      <div class="card">Frequency<br><span id="c2_freq"></span></div>
+      <div class="card">Cycle Total<br><span id="c2_ctot"></span></div>
+      <div class="card">Cycle Remaining<br><span id="c2_crem"></span></div>
+    </div>
+    <div id="c2_status" class="status"></div>
+    <div id="c2_cycle" class="status"></div>
+  </div>
+
+  <canvas id="graph"></canvas>
 
 </div>
 </div>
@@ -100,28 +140,28 @@
 
 const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
+let dataset = [];
+let headers = [];
+let chart;
 let lastValidData = null;
 
 function getStatusColor(text){
   if(!text) return "yellow";
-  if(text.includes("RUN") || text.includes("HEALTHY")) return "green";
-  if(text.includes("FAULT")) return "red";
+  if(text.includes("HEALTHY") || text.includes("RUNNING") || text.includes("RUN")) return "green";
+  if(text.includes("DOWN") || text.includes("FAULT")) return "red";
   return "yellow";
 }
 
-// ✅ Force YYYY-MM-DD format safely
+// ✅ Always returns YYYY-MM-DD or empty string
 function getFormattedDate(){
-  let input = document.getElementById("datePicker").value;
-
-  if(!input) return "";
-
-  // input already in YYYY-MM-DD → just return
-  return input;
+  let input = document.getElementById("datePicker").value.trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+  return "";
 }
 
 async function fetchData(){
 
-  let selectedDate = getFormattedDate();  // ✅ ALWAYS YYYY-MM-DD
+  let selectedDate = getFormattedDate();
 
   try {
 
@@ -144,14 +184,18 @@ async function fetchData(){
         return;
       }
 
-      let last = data2[data2.length - 1];
+      let last = [...data2].reverse().find(r => r["C1_Level"] || r["C2_Level"]);
+      if(!last) return;
       lastValidData = last;
-
       updateUI(last, true);
       return;
     }
 
-    let last = data[data.length - 1];
+    dataset = data;
+    headers = Object.keys(data[0]);
+
+    let last = [...data].reverse().find(r => r["C1_Level"] || r["C2_Level"]);
+    if(!last) return;
     lastValidData = last;
 
     updateUI(last, false);
@@ -164,51 +208,69 @@ async function fetchData(){
 
 function updateUI(d, stale){
 
-  function render(prefix, gridId){
-    let grid = document.getElementById(gridId);
-    grid.innerHTML = "";
+  function g(x){ return d[x] ?? "--"; }
 
-    Object.keys(d).forEach(k=>{
-      if(k.startsWith(prefix)){
-        grid.innerHTML += `<div class="card">${k}<br>${d[k] ?? "--"}</div>`;
-      }
-    });
-  }
+  // C1
+  document.getElementById("c1_lvl").innerText    = g("C1_Level");
+  document.getElementById("c1_flow").innerText   = g("C1_Inflow");
+  document.getElementById("c1_setrpm").innerText = g("C1_SetRPM");
+  document.getElementById("c1_rpm").innerText    = g("C1_ActRPM");
+  document.getElementById("c1_cur").innerText    = g("C1_Current_A");
+  document.getElementById("c1_pow").innerText    = g("C1_Power_kW");
+  document.getElementById("c1_tor").innerText    = g("C1_Torque_Nm");
+  document.getElementById("c1_freq").innerText   = g("C1_Frequency_Hz");
+  document.getElementById("c1_ctot").innerText   = g("C1_CycleTot");
+  document.getElementById("c1_crem").innerText   = g("C1_CycleRem");
+  document.getElementById("c1_status").innerText = g("C1_DecPos");
+  document.getElementById("c1_cycle").innerText  = g("C1_CycleStat");
 
-  render("C1_", "c1_grid");
-  render("C2_", "c2_grid");
+  // C2
+  document.getElementById("c2_lvl").innerText    = g("C2_Level");
+  document.getElementById("c2_flow").innerText   = g("C2_Inflow");
+  document.getElementById("c2_setrpm").innerText = g("C2_SetRPM");
+  document.getElementById("c2_rpm").innerText    = g("C2_ActRPM");
+  document.getElementById("c2_cur").innerText    = g("C2_Current_A");
+  document.getElementById("c2_pow").innerText    = g("C2_Power_kW");
+  document.getElementById("c2_tor").innerText    = g("C2_Torque_Nm");
+  document.getElementById("c2_freq").innerText   = g("C2_Frequency_Hz");
+  document.getElementById("c2_ctot").innerText   = g("C2_CycleTot");
+  document.getElementById("c2_crem").innerText   = g("C2_CycleRem");
+  document.getElementById("c2_status").innerText = g("C2_DecPos");
+  document.getElementById("c2_cycle").innerText  = g("C2_CycleStat");
 
-  c1_status.innerText = d["C1_DecPos"] || "--";
-  c2_status.innerText = d["C2_DecPos"] || "--";
+  // Status colors
+  document.getElementById("c1_status").className = "status " + getStatusColor(g("C1_DecPos"));
+  document.getElementById("c2_status").className = "status " + getStatusColor(g("C2_DecPos"));
 
-  c1_status.className = "status " + getStatusColor(d["C1_DecPos"]);
-  c2_status.className = "status " + getStatusColor(d["C2_DecPos"]);
-
+  // Timestamp
   let dataTime = d["Timestamp"] || d["Time"] || d["Date"] || "No Timestamp";
-
   document.getElementById("time").innerText =
     "Data Time: " + dataTime + (stale ? " ⚠️ LAST AVAILABLE DATA" : "");
 }
 
 function openGraphPage(){
-  let date = getFormattedDate(); // ✅ ALWAYS correct format
+  let date = getFormattedDate();
   window.open("graph.html?date=" + date, "_blank");
 }
 
-// ✅ Set default date in YYYY-MM-DD correctly
+// ✅ Set today's date in YYYY-MM-DD format
 function setTodayDate(){
   let today = new Date();
-
   let yyyy = today.getFullYear();
   let mm = String(today.getMonth() + 1).padStart(2, '0');
   let dd = String(today.getDate()).padStart(2, '0');
-
   document.getElementById("datePicker").value = `${yyyy}-${mm}-${dd}`;
 }
 
 setTodayDate();
 
-document.getElementById("datePicker").addEventListener("change", fetchData);
+// ✅ Trigger fetch only when a full valid YYYY-MM-DD date is typed
+document.getElementById("datePicker").addEventListener("input", function(){
+  let val = this.value.trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(val)){
+    fetchData();
+  }
+});
 
 fetchData();
 setInterval(fetchData, 60000);
