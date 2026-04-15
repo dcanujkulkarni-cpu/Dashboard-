@@ -201,44 +201,48 @@
 <body>
 <div class="container">
 
-  <!-- SIDEBAR -->
   <div class="sidebar">
     <h3>📅 Select Date</h3>
     <input type="text" id="datePicker" placeholder="YYYY-MM-DD" maxlength="10">
     <hr>
+    <button onclick="fetchData()">🔄 Refresh Now</button>
     <button onclick="openGraphPage()">📊 Open Graph Panel</button>
-
+    <button class="btn-debug" onclick="toggleDebug()">🔍 Toggle Debug</button>
     <div class="live-badge">
-      <div class="dot" id="liveDot"></div>
-      <span id="liveLabel">Live</span>
+      <div class="dot error" id="liveDot"></div>
+      <span id="liveLabel">Error</span>
     </div>
   </div>
 
-  <!-- MAIN -->
   <div class="main">
+    <div class="header"><h1>⚙️ Decanter Data Dashboard</h1></div>
+    <p id="time">Error: API did not return JSON. See debug panel.</p>
 
-    <div class="header">
-      <h1>⚙️ Decanter Data Dashboard</h1>
+    <!-- DEBUG PANEL — open by default so you can see what API returns -->
+    <div id="debugPanel" style="display: block;">
+      <h3>🔍 Debug Panel — Raw API Response</h3>
+      <div id="debugStatus">❌ Not valid JSON. Raw response below (fix your Apps Script):</div>
+      <div id="debugRaw">Web App is running. Use POST to send data.</div>
     </div>
-    <p id="time">Fetching data...</p>
 
     <!-- C-Tech 1 -->
     <div class="section">
       <h2>C-Tech 1</h2>
       <div class="grid">
-        <div class="card">Level<span id="C1_Level">--</span></div>
-        <div class="card">Inflow<span id="C1_Inflow">--</span></div>
-        <div class="card">Set RPM<span id="C1_SetRPM">--</span></div>
-        <div class="card">Actual RPM<span id="C1_ActRPM">--</span></div>
-        <div class="card">Current<span id="C1_Current_A">--</span></div>
-        <div class="card">Power<span id="C1_Power_kW">--</span></div>
-        <div class="card">Torque<span id="C1_Torque_Nm">--</span></div>
-        <div class="card">Frequency<span id="C1_Freq_Hz">--</span></div>
-        <div class="card">Cycle Total<span id="C1_CycleTot">--</span></div>
-        <div class="card">Cycle Remaining<span id="C1_CycleRem">--</span></div>
+        <div class="card"><span class="card-label">Level<span class="card-unit">mm</span></span><span class="card-value" id="c1_lvl">--</span></div>
+        <div class="card"><span class="card-label">Inflow<span class="card-unit">m³/h</span></span><span class="card-value" id="c1_flow">--</span></div>
+        <div class="card"><span class="card-label">Set RPM<span class="card-unit">RPM</span></span><span class="card-value" id="c1_setrpm">--</span></div>
+        <div class="card"><span class="card-label">Actual RPM<span class="card-unit">RPM</span></span><span class="card-value" id="c1_rpm">--</span></div>
+        <div class="card"><span class="card-label">Current<span class="card-unit">A</span></span><span class="card-value" id="c1_cur">--</span></div>
+        <div class="card"><span class="card-label">Power<span class="card-unit">kW</span></span><span class="card-value" id="c1_pow">--</span></div>
+        <div class="card"><span class="card-label">Torque<span class="card-unit">Nm</span></span><span class="card-value" id="c1_tor">--</span></div>
+        <div class="card"><span class="card-label">Frequency<span class="card-unit">Hz</span></span><span class="card-value" id="c1_freq">--</span></div>
+        <div class="card"><span class="card-label">Cycle Total<span class="card-unit">min</span></span><span class="card-value" id="c1_ctot">--</span></div>
+        <div class="card"><span class="card-label">Cycle Remaining<span class="card-unit">min</span></span><span class="card-value" id="c1_crem">--</span></div>
       </div>
       <div class="status-row">
-        <div class="status yellow" id="C1_DecPos">--</div>
+        <div class="status yellow" id="c1_status">--</div>
+        <div class="status yellow" id="c1_cycle">--</div>
       </div>
     </div>
 
@@ -246,174 +250,214 @@
     <div class="section">
       <h2>C-Tech 2</h2>
       <div class="grid">
-        <div class="card">Level<span id="C2_Level">--</span></div>
-        <div class="card">Inflow<span id="C2_Inflow">--</span></div>
-        <div class="card">Set RPM<span id="C2_SetRPM">--</span></div>
-        <div class="card">Actual RPM<span id="C2_ActRPM">--</span></div>
-        <div class="card">Current<span id="C2_Current_A">--</span></div>
-        <div class="card">Power<span id="C2_Power_kW">--</span></div>
-        <div class="card">Torque<span id="C2_Torque_Nm">--</span></div>
-        <div class="card">Frequency<span id="C2_Freq_Hz">--</span></div>
-        <div class="card">Cycle Total<span id="C2_CycleTot">--</span></div>
-        <div class="card">Cycle Remaining<span id="C2_CycleRem">--</span></div>
+        <div class="card"><span class="card-label">Level<span class="card-unit">mm</span></span><span class="card-value" id="c2_lvl">--</span></div>
+        <div class="card"><span class="card-label">Inflow<span class="card-unit">m³/h</span></span><span class="card-value" id="c2_flow">--</span></div>
+        <div class="card"><span class="card-label">Set RPM<span class="card-unit">RPM</span></span><span class="card-value" id="c2_setrpm">--</span></div>
+        <div class="card"><span class="card-label">Actual RPM<span class="card-unit">RPM</span></span><span class="card-value" id="c2_rpm">--</span></div>
+        <div class="card"><span class="card-label">Current<span class="card-unit">A</span></span><span class="card-value" id="c2_cur">--</span></div>
+        <div class="card"><span class="card-label">Power<span class="card-unit">kW</span></span><span class="card-value" id="c2_pow">--</span></div>
+        <div class="card"><span class="card-label">Torque<span class="card-unit">Nm</span></span><span class="card-value" id="c2_tor">--</span></div>
+        <div class="card"><span class="card-label">Frequency<span class="card-unit">Hz</span></span><span class="card-value" id="c2_freq">--</span></div>
+        <div class="card"><span class="card-label">Cycle Total<span class="card-unit">min</span></span><span class="card-value" id="c2_ctot">--</span></div>
+        <div class="card"><span class="card-label">Cycle Remaining<span class="card-unit">min</span></span><span class="card-value" id="c2_crem">--</span></div>
       </div>
       <div class="status-row">
-        <div class="status yellow" id="C2_DecPos">--</div>
+        <div class="status yellow" id="c2_status">--</div>
+        <div class="status yellow" id="c2_cycle">--</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-
 const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
 let lastValidData = null;
+let debugVisible  = true; // open by default
 
-// ── Helpers ──────────────────────────────────────────────
-function getStatusColor(text){
-  if(!text || text === "--") return "yellow";
+function toggleDebug() {
+  debugVisible = !debugVisible;
+  document.getElementById("debugPanel").style.display = debugVisible ? "block" : "none";
+}
+
+function debugLog(statusMsg, dataObj) {
+  document.getElementById("debugStatus").innerText = statusMsg;
+  document.getElementById("debugRaw").innerText =
+    typeof dataObj === "string" ? dataObj : JSON.stringify(dataObj, null, 2);
+}
+
+function getStatusColor(text) {
+  if (!text || text === "--") return "yellow";
   const t = text.toUpperCase();
-  if(t.includes("RUN") || t.includes("HEALTHY") || t.includes("RUNNING")) return "green";
-  if(t.includes("FAULT") || t.includes("DOWN")) return "red";
+  if (t.includes("RUN") || t.includes("RUNNING") || t.includes("HEALTHY")) return "green";
+  if (t.includes("FAULT") || t.includes("DOWN")) return "red";
   return "yellow";
 }
 
-function getFormattedDate(){
-  const input = document.getElementById("datePicker").value.trim();
-  return /^\d{4}-\d{2}-\d{2}$/.test(input) ? input : "";
+function getFormattedDate() {
+  const v = document.getElementById("datePicker").value.trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
 }
 
-function setTodayDate(){
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm   = String(today.getMonth() + 1).padStart(2, '0');
-  const dd   = String(today.getDate()).padStart(2, '0');
-  document.getElementById("datePicker").value = `${yyyy}-${mm}-${dd}`;
+function setTodayDate() {
+  const t  = new Date();
+  const mm = String(t.getMonth()+1).padStart(2,'0');
+  const dd = String(t.getDate()).padStart(2,'0');
+  document.getElementById("datePicker").value = `${t.getFullYear()}-${mm}-${dd}`;
 }
 
-function setLiveIndicator(isStale){
-  const dot   = document.getElementById("liveDot");
-  const label = document.getElementById("liveLabel");
-  if(isStale){
-    dot.className   = "dot stale";
-    label.innerText = "Last Known";
-  } else {
-    dot.className   = "dot";
-    label.innerText = "Live";
+function setLiveIndicator(state) {
+  const dot = document.getElementById("liveDot");
+  const lbl = document.getElementById("liveLabel");
+  dot.className = "dot" + (state !== "live" ? " " + state : "");
+  lbl.innerText = state === "live" ? "Live" : state === "stale" ? "Last Known" : "Error";
+}
+
+// Scans from the end, returns last row with any non-empty value
+function getLastValidRow(rows) {
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    if (Object.values(r).some(v => v !== "" && v !== null && v !== undefined)) return r;
   }
+  return rows[rows.length - 1];
 }
 
-// ── UI Update ─────────────────────────────────────────────
-function updateUI(d, stale){
-  const g = x => d[x] ?? "--";
-
-  // C1 cards
-  document.getElementById("C1_Level").innerText    = g("C1_Level");
-  document.getElementById("C1_Inflow").innerText   = g("C1_Inflow");
-  document.getElementById("C1_SetRPM").innerText = g("C1_SetRPM");
-  document.getElementById("C1_ActRPM").innerText    = g("C1_ActRPM");
-  document.getElementById("C1_Current_A").innerText    = g("C1_Current_A");
-  document.getElementById("C1_Power_kW").innerText    = g("C1_Power_kW");
-  document.getElementById("C1_Torque_Nm").innerText    = g("C1_Torque_Nm");
-  document.getElementById("C1_Freq_Hz").innerText   = g("C1_Freq_Hz");
-  document.getElementById("C1_CycleTot").innerText   = g("C1_CycleTot");
-  document.getElementById("C1_CycleRem").innerText   = g("C1_CycleRem");
-
-  // C2 cards
-  document.getElementById("C2_Level").innerText    = g("C2_Level");
-  document.getElementById("C2_Inflow").innerText   = g("C2_Inflow");
-  document.getElementById("C2_SetRPM").innerText = g("C2_SetRPM");
-  document.getElementById("C2_ActRPM").innerText    = g("C2_ActRPM");
-  document.getElementById("C2_Current_A").innerText    = g("C2_Current_A");
-  document.getElementById("C2_Power_kW").innerText    = g("C2_Power_kW");
-  document.getElementById("C2_Torque_Nm").innerText    = g("C2_Torque_Nm");
-  document.getElementById("C2_Freq_Hz").innerText   = g("C2_Freq_Hz");
-  document.getElementById("C2_CycleTot").innerText   = g("C2_CycleTot");
-  document.getElementById("C2_CycleRem").innerText   = g("C2_CycleRem");
-
-  // Status bars
-  const c1s = document.getElementById("C1_DecPos");
-  const c2s = document.getElementById("C2_DecPos");
-
-  c1s.innerText  = g("C1_DecPos");
-  c2s.innerText  = g("C2_DecPos");
-
-  c1s.className  = "status " + getStatusColor(g("C1_DecPos"));
-  c2s.className  = "status " + getStatusColor(g("C2_DecPos"));
-
-
-  // Timestamp
-  const dataTime = d["Timestamp"] || d["Time"] || d["Date"] || "No Timestamp";
-  document.getElementById("time").innerText =
-    "Last Updated: " + dataTime + (stale ? "  ⚠️ SHOWING LAST AVAILABLE DATA" : "");
-
-  setLiveIndicator(stale);
+// Case-insensitive key lookup
+function g(d, key) {
+  if (d[key] !== undefined && d[key] !== null && d[key] !== "") return d[key];
+  const lk = key.toLowerCase();
+  for (const k of Object.keys(d)) {
+    if (k.toLowerCase() === lk && d[k] !== "" && d[k] !== null) return d[k];
+  }
+  return "--";
 }
 
-// ── Fetch ─────────────────────────────────────────────────
+function updateUI(d, stale) {
+  document.getElementById("c1_lvl").innerText    = g(d,"C1_Level");
+  document.getElementById("c1_flow").innerText   = g(d,"C1_Inflow");
+  document.getElementById("c1_setrpm").innerText = g(d,"C1_SetRPM");
+  document.getElementById("c1_rpm").innerText    = g(d,"C1_ActRPM");
+  document.getElementById("c1_cur").innerText    = g(d,"C1_Current_A");
+  document.getElementById("c1_pow").innerText    = g(d,"C1_Power_kW");
+  document.getElementById("c1_tor").innerText    = g(d,"C1_Torque_Nm");
+  document.getElementById("c1_freq").innerText   = g(d,"C1_Frequency_Hz");
+  document.getElementById("c1_ctot").innerText   = g(d,"C1_CycleTot");
+  document.getElementById("c1_crem").innerText   = g(d,"C1_CycleRem");
+
+  document.getElementById("c2_lvl").innerText    = g(d,"C2_Level");
+  document.getElementById("c2_flow").innerText   = g(d,"C2_Inflow");
+  document.getElementById("c2_setrpm").innerText = g(d,"C2_SetRPM");
+  document.getElementById("c2_rpm").innerText    = g(d,"C2_ActRPM");
+  document.getElementById("c2_cur").innerText    = g(d,"C2_Current_A");
+  document.getElementById("c2_pow").innerText    = g(d,"C2_Power_kW");
+  document.getElementById("c2_tor").innerText    = g(d,"C2_Torque_Nm");
+  document.getElementById("c2_freq").innerText   = g(d,"C2_Frequency_Hz");
+  document.getElementById("c2_ctot").innerText   = g(d,"C2_CycleTot");
+  document.getElementById("c2_crem").innerText   = g(d,"C2_CycleRem");
+
+  const c1s = document.getElementById("c1_status");
+  const c2s = document.getElementById("c2_status");
+  const c1c = document.getElementById("c1_cycle");
+  const c2c = document.getElementById("c2_cycle");
+
+  c1s.innerText = g(d,"C1_DecPos");    c2s.innerText = g(d,"C2_DecPos");
+  c1c.innerText = g(d,"C1_CycleStat"); c2c.innerText = g(d,"C2_CycleStat");
+  c1s.className = "status " + getStatusColor(g(d,"C1_DecPos"));
+  c2s.className = "status " + getStatusColor(g(d,"C2_DecPos"));
+  c1c.className = "status " + getStatusColor(g(d,"C1_CycleStat"));
+  c2c.className = "status " + getStatusColor(g(d,"C2_CycleStat"));
+
+  const ts = d["Timestamp"] || d["Time"] || d["Date"] || "No timestamp";
+  document.getElementById("time").innerText = "Last Updated: " + ts + (stale ? "  ⚠️ LAST AVAILABLE DATA" : "");
+  setLiveIndicator(stale ? "stale" : "live");
+}
+
 async function fetchData() {
   const date = getFormattedDate();
   document.getElementById("time").innerText = "Fetching...";
 
   try {
-    const url = BASE_URL;
+    const url = BASE_URL + (date ? "?date=" + date : "");
+    debugLog("🔄 Fetching: " + url, "Please wait...");
 
-    debugLog("🔄 Sending POST request...", "Please wait...");
-
-    const res = await fetch(url, {
-      method: "POST",   // ✅ IMPORTANT CHANGE
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        date: date   // send date if needed
-      })
-    });
-
+    const res  = await fetch(url);
     const text = await res.text();
+
+    if (!res.ok) {
+      debugLog("❌ HTTP Error " + res.status, text.substring(0, 1000));
+      setLiveIndicator("error");
+      document.getElementById("time").innerText = "HTTP Error " + res.status;
+      return;
+    }
 
     let data;
     try {
       data = JSON.parse(text);
-    } catch (e) {
-      debugLog("❌ Still not JSON (POST failed)", text.substring(0, 2000));
+    } catch(e) {
+      debugLog("❌ Not valid JSON. Raw response below (fix your Apps Script):", text.substring(0, 3000));
       setLiveIndicator("error");
-      document.getElementById("time").innerText = "POST failed: Not JSON";
+      document.getElementById("time").innerText = "Error: API did not return JSON. See debug panel.";
       return;
     }
 
     const rows = Array.isArray(data) ? data : [data];
 
     if (rows.length === 0) {
-      debugLog("⚠️ No data received from POST", "");
-      document.getElementById("time").innerText = "No data available";
+      debugLog("⚠️ Empty array returned for date: " + (date || "live"), "Trying live fallback...");
+      if (date) {
+        const r2   = await fetch(BASE_URL);
+        const t2   = await r2.text();
+        const d2   = JSON.parse(t2);
+        const r2s  = Array.isArray(d2) ? d2 : [d2];
+        if (r2s.length > 0) {
+          const last = getLastValidRow(r2s);
+          lastValidData = last;
+          debugLog("⚠️ No data for selected date. Showing latest live row:", last);
+          updateUI(last, true);
+          return;
+        }
+      }
+      if (lastValidData) { updateUI(lastValidData, true); }
+      debugLog("⚠️ No data available at all.", "");
+      document.getElementById("time").innerText = "No data available.";
       return;
     }
 
     const last = getLastValidRow(rows);
     lastValidData = last;
 
-    debugLog("✅ POST Success — Data received:", last);
+    // Show all keys from the last row so you can match them
+    debugLog(
+      "✅ Success — " + rows.length + " row(s) received. Using last valid row. " +
+      "Row keys (use these exact names in the code):",
+      last
+    );
 
     updateUI(last, false);
 
-  } catch (e) {
-    debugLog("❌ Fetch failed: " + e.message, e.toString());
+  } catch(e) {
+    debugLog("❌ Fetch threw an exception: " + e.message, e.toString());
     setLiveIndicator("error");
-    document.getElementById("time").innerText = "Fetch error";
+    document.getElementById("time").innerText = "Fetch failed: " + e.message;
+    console.error(e);
     if (lastValidData) updateUI(lastValidData, true);
   }
 }
 
-// ── Init ──────────────────────────────────────────────────
-setTodayDate();
+function openGraphPage() {
+  const date = getFormattedDate();
+  window.open("graph.html" + (date ? "?date=" + date : ""), "_blank");
+}
 
-document.getElementById("datePicker").addEventListener("input", function(){
-  if(/^\d{4}-\d{2}-\d{2}$/.test(this.value.trim())) fetchData();
+setTodayDate();
+document.getElementById("datePicker").addEventListener("input", function() {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(this.value.trim())) fetchData();
 });
 
 fetchData();
-setInterval(fetchData, 60000); // refresh every 60 seconds
-
+setInterval(fetchData, 60000);
 </script>
+
+
 </body>
 </html>
