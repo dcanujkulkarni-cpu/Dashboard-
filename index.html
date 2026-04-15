@@ -3,214 +3,315 @@
 <head>
   <title>Decanter Dashboard</title>
   <style>
-    body { margin:0; font-family:Segoe UI; background:#0b1220; color:white; }
-    .container { display:flex; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0b1220;
+      color: white;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ─── SIDEBAR ─── */
     .sidebar {
-      width:250px;
-      background:#111827;
-      padding:15px;
-      height:100vh;
+      width: 220px;
+      background: #0f172a;
+      padding: 20px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-right: 1px solid #1e293b;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
     }
 
-    .main { flex:1; padding:20px; }
+    .sidebar h3 {
+      font-size: 13px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
+    .sidebar input[type="text"] {
+      width: 100%;
+      padding: 9px 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: white;
+      font-size: 14px;
+      letter-spacing: 1px;
+      outline: none;
+    }
+
+    .sidebar input[type="text"]:focus {
+      border-color: #3b82f6;
+    }
+
+    .sidebar input::placeholder { color: #475569; }
+
+    .sidebar hr {
+      border: none;
+      border-top: 1px solid #1e293b;
+      margin: 4px 0;
+    }
+
+    .sidebar button {
+      width: 100%;
+      padding: 10px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    .sidebar button:hover { background: #1d4ed8; }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: auto;
+      padding-top: 10px;
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 1.5s infinite;
+    }
+
+    .dot.stale { background: #f59e0b; animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ─── MAIN ─── */
+    .main {
+      margin-left: 220px;
+      flex: 1;
+      padding: 24px 28px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #time {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    /* ─── SECTION ─── */
     .section {
-      margin-bottom:30px;
-      background:#1e293b;
-      padding:15px;
-      border-radius:10px;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      border: 1px solid #273449;
     }
 
+    .section h2 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+    }
+
+    /* ─── GRID ─── */
     .grid {
-      display:grid;
-      grid-template-columns: repeat(4,1fr);
-      gap:10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
     }
 
     .card {
-      background:#020617;
-      padding:10px;
-      border-radius:6px;
-      text-align:center;
-      font-size:13px;
+      background: #020617;
+      border: 1px solid #1e293b;
+      padding: 12px 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .card span {
+      display: block;
+      margin-top: 6px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    /* ─── STATUS BARS ─── */
+    .status-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
     }
 
     .status {
-      margin-top:10px;
-      padding:8px;
-      border-radius:6px;
-      font-weight:bold;
+      flex: 1;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      text-align: center;
+      background: #78350f;
+      color: #fef3c7;
+      transition: background 0.3s;
     }
 
-    .green { background:#065f46; }
-    .red { background:#7f1d1d; }
-    .yellow { background:#78350f; }
-
-    input, button {
-      width:100%;
-      margin:10px 0;
-      padding:8px;
-      border-radius:5px;
-      border:none;
-    }
-
-    input[type="text"] {
-      background:#1e293b;
-      color:white;
-      font-size:14px;
-      letter-spacing:1px;
-      box-sizing:border-box;
-    }
-
-    input[type="text"]::placeholder {
-      color:#64748b;
-    }
-
-    button {
-      background:#2563eb;
-      color:white;
-      cursor:pointer;
-    }
+    .status.green  { background: #065f46; color: #d1fae5; }
+    .status.red    { background: #7f1d1d; color: #fee2e2; }
+    .status.yellow { background: #78350f; color: #fef3c7; }
   </style>
 </head>
 
 <body>
-
 <div class="container">
 
-<div class="sidebar">
-  <h3>📅 Select Date</h3>
-  <input type="text" id="datePicker" placeholder="YYYY-MM-DD" maxlength="10">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <h3>📅 Select Date</h3>
+    <input type="text" id="datePicker" placeholder="YYYY-MM-DD" maxlength="10">
+    <hr>
+    <button onclick="openGraphPage()">📊 Open Graph Panel</button>
 
-  <hr>
-
-  <button onclick="openGraphPage()">📊 Open Graph Panel</button>
-</div>
-
-<div class="main">
-
-  <h1>⚙️ Decanter Data Dashboard</h1>
-  <p id="time"></p>
-
-  <!-- C-Tech 1 -->
-  <div class="section">
-    <h2>C-Tech 1</h2>
-    <div class="grid">
-      <div class="card">Level<br><span id="c1_lvl"></span></div>
-      <div class="card">Inflow<br><span id="c1_flow"></span></div>
-      <div class="card">Set RPM<br><span id="c1_setrpm"></span></div>
-      <div class="card">Actual RPM<br><span id="c1_rpm"></span></div>
-      <div class="card">Current<br><span id="c1_cur"></span></div>
-      <div class="card">Power<br><span id="c1_pow"></span></div>
-      <div class="card">Torque<br><span id="c1_tor"></span></div>
-      <div class="card">Frequency<br><span id="c1_freq"></span></div>
-      <div class="card">Cycle Total<br><span id="c1_ctot"></span></div>
-      <div class="card">Cycle Remaining<br><span id="c1_crem"></span></div>
+    <div class="live-badge">
+      <div class="dot" id="liveDot"></div>
+      <span id="liveLabel">Live</span>
     </div>
-    <div id="c1_status" class="status"></div>
-    <div id="c1_cycle" class="status"></div>
   </div>
 
-  <!-- C-Tech 2 -->
-  <div class="section">
-    <h2>C-Tech 2</h2>
-    <div class="grid">
-      <div class="card">Level<br><span id="c2_lvl"></span></div>
-      <div class="card">Inflow<br><span id="c2_flow"></span></div>
-      <div class="card">Set RPM<br><span id="c2_setrpm"></span></div>
-      <div class="card">Actual RPM<br><span id="c2_rpm"></span></div>
-      <div class="card">Current<br><span id="c2_cur"></span></div>
-      <div class="card">Power<br><span id="c2_pow"></span></div>
-      <div class="card">Torque<br><span id="c2_tor"></span></div>
-      <div class="card">Frequency<br><span id="c2_freq"></span></div>
-      <div class="card">Cycle Total<br><span id="c2_ctot"></span></div>
-      <div class="card">Cycle Remaining<br><span id="c2_crem"></span></div>
+  <!-- MAIN -->
+  <div class="main">
+
+    <div class="header">
+      <h1>⚙️ Decanter Data Dashboard</h1>
     </div>
-    <div id="c2_status" class="status"></div>
-    <div id="c2_cycle" class="status"></div>
+    <p id="time">Fetching data...</p>
+
+    <!-- C-Tech 1 -->
+    <div class="section">
+      <h2>C-Tech 1</h2>
+      <div class="grid">
+        <div class="card">Level<span id="C1_Level">--</span></div>
+        <div class="card">Inflow<span id="C1_Flow">--</span></div>
+        <div class="card">Set RPM<span id="C1_SetRPM">--</span></div>
+        <div class="card">Actual RPM<span id="C1_ActRPM">--</span></div>
+        <div class="card">Current<span id="C1_Current_A">--</span></div>
+        <div class="card">Power<span id="C1_Power_kW">--</span></div>
+        <div class="card">Torque<span id="C1_Torque_Nm">--</span></div>
+        <div class="card">Frequency<span id="C1_Freq_Hz">--</span></div>
+        <div class="card">Cycle Total<span id="C1_CycleTot">--</span></div>
+        <div class="card">Cycle Remaining<span id="C1_CycleRem">--</span></div>
+      </div>
+      <div class="status-row">
+        <div class="status yellow" id="c1_status">--</div>
+        <div class="status yellow" id="c1_cycle">--</div>
+      </div>
+    </div>
+
+    <!-- C-Tech 2 -->
+    <div class="section">
+      <h2>C-Tech 2</h2>
+      <div class="grid">
+        <div class="card">Level<span id="c2_lvl">--</span></div>
+        <div class="card">Inflow<span id="c2_flow">--</span></div>
+        <div class="card">Set RPM<span id="c2_setrpm">--</span></div>
+        <div class="card">Actual RPM<span id="c2_rpm">--</span></div>
+        <div class="card">Current<span id="c2_cur">--</span></div>
+        <div class="card">Power<span id="c2_pow">--</span></div>
+        <div class="card">Torque<span id="c2_tor">--</span></div>
+        <div class="card">Frequency<span id="c2_freq">--</span></div>
+        <div class="card">Cycle Total<span id="c2_ctot">--</span></div>
+        <div class="card">Cycle Remaining<span id="c2_crem">--</span></div>
+      </div>
+      <div class="status-row">
+        <div class="status yellow" id="c2_status">--</div>
+        <div class="status yellow" id="c2_cycle">--</div>
+      </div>
+    </div>
+
   </div>
-
-  <canvas id="graph"></canvas>
-
-</div>
 </div>
 
 <script>
 
 const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
-let dataset = [];
-let headers = [];
-let chart;
 let lastValidData = null;
 
+// ── Helpers ──────────────────────────────────────────────
 function getStatusColor(text){
-  if(!text) return "yellow";
-  if(text.includes("HEALTHY") || text.includes("RUNNING") || text.includes("RUN")) return "green";
-  if(text.includes("DOWN") || text.includes("FAULT")) return "red";
+  if(!text || text === "--") return "yellow";
+  const t = text.toUpperCase();
+  if(t.includes("RUN") || t.includes("HEALTHY") || t.includes("RUNNING")) return "green";
+  if(t.includes("FAULT") || t.includes("DOWN")) return "red";
   return "yellow";
 }
 
-// ✅ Always returns YYYY-MM-DD or empty string
 function getFormattedDate(){
-  let input = document.getElementById("datePicker").value.trim();
-  if(/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
-  return "";
+  const input = document.getElementById("datePicker").value.trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(input) ? input : "";
 }
 
-async function fetchData(){
+function setTodayDate(){
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm   = String(today.getMonth() + 1).padStart(2, '0');
+  const dd   = String(today.getDate()).padStart(2, '0');
+  document.getElementById("datePicker").value = `${yyyy}-${mm}-${dd}`;
+}
 
-  let selectedDate = getFormattedDate();
-
-  try {
-
-    let url = BASE_URL;
-    if(selectedDate){
-      url += "?date=" + selectedDate;
-    }
-
-    let res = await fetch(url);
-    let data = await res.json();
-
-    // 🔥 If no data → fallback to latest
-    if(!data || data.length === 0){
-
-      let res2 = await fetch(BASE_URL);
-      let data2 = await res2.json();
-
-      if(!data2 || data2.length === 0){
-        if(lastValidData) updateUI(lastValidData, true);
-        return;
-      }
-
-      let last = [...data2].reverse().find(r => r["C1_Level"] || r["C2_Level"]);
-      if(!last) return;
-      lastValidData = last;
-      updateUI(last, true);
-      return;
-    }
-
-    dataset = data;
-    headers = Object.keys(data[0]);
-
-    let last = [...data].reverse().find(r => r["C1_Level"] || r["C2_Level"]);
-    if(!last) return;
-    lastValidData = last;
-
-    updateUI(last, false);
-
-  } catch(e){
-    console.log("Error:", e);
-    if(lastValidData) updateUI(lastValidData, true);
+function setLiveIndicator(isStale){
+  const dot   = document.getElementById("liveDot");
+  const label = document.getElementById("liveLabel");
+  if(isStale){
+    dot.className   = "dot stale";
+    label.innerText = "Last Known";
+  } else {
+    dot.className   = "dot";
+    label.innerText = "Live";
   }
 }
 
+// ── UI Update ─────────────────────────────────────────────
 function updateUI(d, stale){
+  const g = x => d[x] ?? "--";
 
-  function g(x){ return d[x] ?? "--"; }
-
-  // C1
+  // C1 cards
   document.getElementById("c1_lvl").innerText    = g("C1_Level");
   document.getElementById("c1_flow").innerText   = g("C1_Inflow");
   document.getElementById("c1_setrpm").innerText = g("C1_SetRPM");
@@ -221,10 +322,8 @@ function updateUI(d, stale){
   document.getElementById("c1_freq").innerText   = g("C1_Frequency_Hz");
   document.getElementById("c1_ctot").innerText   = g("C1_CycleTot");
   document.getElementById("c1_crem").innerText   = g("C1_CycleRem");
-  document.getElementById("c1_status").innerText = g("C1_DecPos");
-  document.getElementById("c1_cycle").innerText  = g("C1_CycleStat");
 
-  // C2
+  // C2 cards
   document.getElementById("c2_lvl").innerText    = g("C2_Level");
   document.getElementById("c2_flow").innerText   = g("C2_Inflow");
   document.getElementById("c2_setrpm").innerText = g("C2_SetRPM");
@@ -235,45 +334,82 @@ function updateUI(d, stale){
   document.getElementById("c2_freq").innerText   = g("C2_Frequency_Hz");
   document.getElementById("c2_ctot").innerText   = g("C2_CycleTot");
   document.getElementById("c2_crem").innerText   = g("C2_CycleRem");
-  document.getElementById("c2_status").innerText = g("C2_DecPos");
-  document.getElementById("c2_cycle").innerText  = g("C2_CycleStat");
 
-  // Status colors
-  document.getElementById("c1_status").className = "status " + getStatusColor(g("C1_DecPos"));
-  document.getElementById("c2_status").className = "status " + getStatusColor(g("C2_DecPos"));
+  // Status bars
+  const c1s = document.getElementById("c1_status");
+  const c2s = document.getElementById("c2_status");
+  const c1c = document.getElementById("c1_cycle");
+  const c2c = document.getElementById("c2_cycle");
+
+  c1s.innerText  = g("C1_DecPos");
+  c2s.innerText  = g("C2_DecPos");
+  c1c.innerText  = g("C1_CycleStat");
+  c2c.innerText  = g("C2_CycleStat");
+
+  c1s.className  = "status " + getStatusColor(g("C1_DecPos"));
+  c2s.className  = "status " + getStatusColor(g("C2_DecPos"));
+  c1c.className  = "status " + getStatusColor(g("C1_CycleStat"));
+  c2c.className  = "status " + getStatusColor(g("C2_CycleStat"));
 
   // Timestamp
-  let dataTime = d["Timestamp"] || d["Time"] || d["Date"] || "No Timestamp";
+  const dataTime = d["Timestamp"] || d["Time"] || d["Date"] || "No Timestamp";
   document.getElementById("time").innerText =
-    "Data Time: " + dataTime + (stale ? " ⚠️ LAST AVAILABLE DATA" : "");
+    "Last Updated: " + dataTime + (stale ? "  ⚠️ SHOWING LAST AVAILABLE DATA" : "");
+
+  setLiveIndicator(stale);
+}
+
+// ── Fetch ─────────────────────────────────────────────────
+async function fetchData(){
+  const selectedDate = getFormattedDate();
+
+  try {
+    // Try selected date first (or live if no date filter)
+    const url = BASE_URL + (selectedDate ? "?date=" + selectedDate : "");
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if(!data || data.length === 0){
+      // No data for selected date → fall back to latest live data
+      const res2  = await fetch(BASE_URL);
+      const data2 = await res2.json();
+
+      if(!data2 || data2.length === 0){
+        if(lastValidData) updateUI(lastValidData, true);
+        return;
+      }
+
+      const last = [...data2].reverse().find(r => r["C1_Level"] || r["C2_Level"]) || data2[data2.length - 1];
+      lastValidData = last;
+      updateUI(last, true);
+      return;
+    }
+
+    // Pick last valid row from result
+    const last = [...data].reverse().find(r => r["C1_Level"] || r["C2_Level"]) || data[data.length - 1];
+    lastValidData = last;
+    updateUI(last, false);
+
+  } catch(e){
+    console.error("Fetch error:", e);
+    if(lastValidData) updateUI(lastValidData, true);
+  }
 }
 
 function openGraphPage(){
-  let date = getFormattedDate();
-  window.open("graph.html?date=" + date, "_blank");
+  const date = getFormattedDate();
+  window.open("graph.html" + (date ? "?date=" + date : ""), "_blank");
 }
 
-// ✅ Set today's date in YYYY-MM-DD format
-function setTodayDate(){
-  let today = new Date();
-  let yyyy = today.getFullYear();
-  let mm = String(today.getMonth() + 1).padStart(2, '0');
-  let dd = String(today.getDate()).padStart(2, '0');
-  document.getElementById("datePicker").value = `${yyyy}-${mm}-${dd}`;
-}
-
+// ── Init ──────────────────────────────────────────────────
 setTodayDate();
 
-// ✅ Trigger fetch only when a full valid YYYY-MM-DD date is typed
 document.getElementById("datePicker").addEventListener("input", function(){
-  let val = this.value.trim();
-  if(/^\d{4}-\d{2}-\d{2}$/.test(val)){
-    fetchData();
-  }
+  if(/^\d{4}-\d{2}-\d{2}$/.test(this.value.trim())) fetchData();
 });
 
 fetchData();
-setInterval(fetchData, 60000);
+setInterval(fetchData, 60000); // refresh every 60 seconds
 
 </script>
 </body>
