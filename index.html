@@ -227,7 +227,7 @@
       <h2>C-Tech 1</h2>
       <div class="grid">
         <div class="card">Level<span id="C1_Level">--</span></div>
-        <div class="card">Inflow<span id="C1_Flow">--</span></div>
+        <div class="card">Inflow<span id="C1_Inflow">--</span></div>
         <div class="card">Set RPM<span id="C1_SetRPM">--</span></div>
         <div class="card">Actual RPM<span id="C1_ActRPM">--</span></div>
         <div class="card">Current<span id="C1_Current_A">--</span></div>
@@ -238,8 +238,7 @@
         <div class="card">Cycle Remaining<span id="C1_CycleRem">--</span></div>
       </div>
       <div class="status-row">
-        <div class="status yellow" id="c1_status">--</div>
-        <div class="status yellow" id="c1_cycle">--</div>
+        <div class="status yellow" id="C1_DecPos">--</div>
       </div>
     </div>
 
@@ -247,16 +246,16 @@
     <div class="section">
       <h2>C-Tech 2</h2>
       <div class="grid">
-        <div class="card">Level<span id="c2_lvl">--</span></div>
-        <div class="card">Inflow<span id="c2_flow">--</span></div>
-        <div class="card">Set RPM<span id="c2_setrpm">--</span></div>
-        <div class="card">Actual RPM<span id="c2_rpm">--</span></div>
-        <div class="card">Current<span id="c2_cur">--</span></div>
-        <div class="card">Power<span id="c2_pow">--</span></div>
-        <div class="card">Torque<span id="c2_tor">--</span></div>
-        <div class="card">Frequency<span id="c2_freq">--</span></div>
-        <div class="card">Cycle Total<span id="c2_ctot">--</span></div>
-        <div class="card">Cycle Remaining<span id="c2_crem">--</span></div>
+        <div class="card">Level<span id="C2_Level">--</span></div>
+        <div class="card">Inflow<span id="C2_Inflow">--</span></div>
+        <div class="card">Set RPM<span id="C2_SetRPM">--</span></div>
+        <div class="card">Actual RPM<span id="C2_ActRPM">--</span></div>
+        <div class="card">Current<span id="C2_Current_A">--</span></div>
+        <div class="card">Power<span id="C2_Power_kW">--</span></div>
+        <div class="card">Torque<span id="C2_Torque_Nm">--</span></div>
+        <div class="card">Frequency<span id="C2_Freq_Hz">--</span></div>
+        <div class="card">Cycle Total<span id="C2_CycleTot">--</span></div>
+        <div class="card">Cycle Remaining<span id="C2_CycleRem">--</span></div>
       </div>
       <div class="status-row">
         <div class="status yellow" id="c2_status">--</div>
@@ -312,44 +311,39 @@ function updateUI(d, stale){
   const g = x => d[x] ?? "--";
 
   // C1 cards
-  document.getElementById("c1_lvl").innerText    = g("C1_Level");
-  document.getElementById("c1_flow").innerText   = g("C1_Inflow");
-  document.getElementById("c1_setrpm").innerText = g("C1_SetRPM");
-  document.getElementById("c1_rpm").innerText    = g("C1_ActRPM");
-  document.getElementById("c1_cur").innerText    = g("C1_Current_A");
-  document.getElementById("c1_pow").innerText    = g("C1_Power_kW");
-  document.getElementById("c1_tor").innerText    = g("C1_Torque_Nm");
-  document.getElementById("c1_freq").innerText   = g("C1_Frequency_Hz");
-  document.getElementById("c1_ctot").innerText   = g("C1_CycleTot");
-  document.getElementById("c1_crem").innerText   = g("C1_CycleRem");
+  document.getElementById("C1_Level").innerText    = g("C1_Level");
+  document.getElementById("C1_Inflow").innerText   = g("C1_Inflow");
+  document.getElementById("C1_SetRPM").innerText = g("C1_SetRPM");
+  document.getElementById("C1_ActRPM").innerText    = g("C1_ActRPM");
+  document.getElementById("C1_Current_A").innerText    = g("C1_Current_A");
+  document.getElementById("C1_Power_kW").innerText    = g("C1_Power_kW");
+  document.getElementById("C1_Torque_Nm").innerText    = g("C1_Torque_Nm");
+  document.getElementById("C1_Freq_Hz").innerText   = g("C1_Freq_Hz");
+  document.getElementById("C1_CycleTot").innerText   = g("C1_CycleTot");
+  document.getElementById("C1_CycleRem").innerText   = g("C1_CycleRem");
 
   // C2 cards
-  document.getElementById("c2_lvl").innerText    = g("C2_Level");
-  document.getElementById("c2_flow").innerText   = g("C2_Inflow");
-  document.getElementById("c2_setrpm").innerText = g("C2_SetRPM");
-  document.getElementById("c2_rpm").innerText    = g("C2_ActRPM");
-  document.getElementById("c2_cur").innerText    = g("C2_Current_A");
-  document.getElementById("c2_pow").innerText    = g("C2_Power_kW");
-  document.getElementById("c2_tor").innerText    = g("C2_Torque_Nm");
-  document.getElementById("c2_freq").innerText   = g("C2_Frequency_Hz");
-  document.getElementById("c2_ctot").innerText   = g("C2_CycleTot");
-  document.getElementById("c2_crem").innerText   = g("C2_CycleRem");
+  document.getElementById("C2_Level").innerText    = g("C2_Level");
+  document.getElementById("C2_Inflow").innerText   = g("C2_Inflow");
+  document.getElementById("C2_SetRPM").innerText = g("C2_SetRPM");
+  document.getElementById("C2_ActRPM").innerText    = g("C2_ActRPM");
+  document.getElementById("C2_Current_A").innerText    = g("C2_Current_A");
+  document.getElementById("C2_Power_kW").innerText    = g("C2_Power_kW");
+  document.getElementById("C2_Torque_Nm").innerText    = g("C2_Torque_Nm");
+  document.getElementById("C2_Freq_Hz").innerText   = g("C2_Freq_Hz");
+  document.getElementById("C2_CycleTot").innerText   = g("C2_CycleTot");
+  document.getElementById("C2_CycleRem").innerText   = g("C2_CycleRem");
 
   // Status bars
-  const c1s = document.getElementById("c1_status");
-  const c2s = document.getElementById("c2_status");
-  const c1c = document.getElementById("c1_cycle");
-  const c2c = document.getElementById("c2_cycle");
+  const c1s = document.getElementById("C1_DecPos");
+  const c2s = document.getElementById("C2_DecPos");
 
   c1s.innerText  = g("C1_DecPos");
   c2s.innerText  = g("C2_DecPos");
-  c1c.innerText  = g("C1_CycleStat");
-  c2c.innerText  = g("C2_CycleStat");
 
   c1s.className  = "status " + getStatusColor(g("C1_DecPos"));
   c2s.className  = "status " + getStatusColor(g("C2_DecPos"));
-  c1c.className  = "status " + getStatusColor(g("C1_CycleStat"));
-  c2c.className  = "status " + getStatusColor(g("C2_CycleStat"));
+
 
   // Timestamp
   const dataTime = d["Timestamp"] || d["Time"] || d["Date"] || "No Timestamp";
