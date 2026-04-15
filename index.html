@@ -350,40 +350,57 @@ function updateUI(d, stale){
 }
 
 // ── Fetch ─────────────────────────────────────────────────
-async function fetchData(){
-  const selectedDate = getFormattedDate();
+async function fetchData() {
+  const date = getFormattedDate();
+  document.getElementById("time").innerText = "Fetching...";
 
   try {
-    const url = BASE_URL + (selectedDate ? "?date=" + selectedDate : "");
-    
-    const res  = await fetch(url);
-    const raw  = await res.json();
-    const data = raw.data || raw;
+    const url = BASE_URL;
 
-    if(!Array.isArray(data) || data.length === 0){
+    debugLog("🔄 Sending POST request...", "Please wait...");
 
-      const res2  = await fetch(BASE_URL);
-      const raw2  = await res2.json();
-      const data2 = raw2.data || raw2;
+    const res = await fetch(url, {
+      method: "POST",   // ✅ IMPORTANT CHANGE
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        date: date   // send date if needed
+      })
+    });
 
-      if(!Array.isArray(data2) || data2.length === 0){
-        if(lastValidData) updateUI(lastValidData, true);
-        return;
-      }
+    const text = await res.text();
 
-      const last = [...data2].reverse().find(r => r["C1_Level"] || r["C2_Level"]) || data2[data2.length - 1];
-      lastValidData = last;
-      updateUI(last, true);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      debugLog("❌ Still not JSON (POST failed)", text.substring(0, 2000));
+      setLiveIndicator("error");
+      document.getElementById("time").innerText = "POST failed: Not JSON";
       return;
     }
 
-    const last = [...data].reverse().find(r => r["C1_Level"] || r["C2_Level"]) || data[data.length - 1];
+    const rows = Array.isArray(data) ? data : [data];
+
+    if (rows.length === 0) {
+      debugLog("⚠️ No data received from POST", "");
+      document.getElementById("time").innerText = "No data available";
+      return;
+    }
+
+    const last = getLastValidRow(rows);
     lastValidData = last;
+
+    debugLog("✅ POST Success — Data received:", last);
+
     updateUI(last, false);
 
-  } catch(e){
-    console.error("Fetch error:", e);
-    if(lastValidData) updateUI(lastValidData, true);
+  } catch (e) {
+    debugLog("❌ Fetch failed: " + e.message, e.toString());
+    setLiveIndicator("error");
+    document.getElementById("time").innerText = "Fetch error";
+    if (lastValidData) updateUI(lastValidData, true);
   }
 }
 
