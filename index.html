@@ -109,16 +109,31 @@ function getStatusColor(text){
   return "yellow";
 }
 
+// ✅ Force YYYY-MM-DD format safely
+function getFormattedDate(){
+  let input = document.getElementById("datePicker").value;
+
+  if(!input) return "";
+
+  // input already in YYYY-MM-DD → just return
+  return input;
+}
+
 async function fetchData(){
 
-  let selectedDate = document.getElementById("datePicker").value; // ✅ YYYY-MM-DD
+  let selectedDate = getFormattedDate();  // ✅ ALWAYS YYYY-MM-DD
 
   try {
 
-    let res = await fetch(BASE_URL + "?date=" + selectedDate);
+    let url = BASE_URL;
+    if(selectedDate){
+      url += "?date=" + selectedDate;
+    }
+
+    let res = await fetch(url);
     let data = await res.json();
 
-    // 🔥 If no data → get latest
+    // 🔥 If no data → fallback to latest
     if(!data || data.length === 0){
 
       let res2 = await fetch(BASE_URL);
@@ -142,6 +157,7 @@ async function fetchData(){
     updateUI(last, false);
 
   } catch(e){
+    console.log("Error:", e);
     if(lastValidData) updateUI(lastValidData, true);
   }
 }
@@ -175,17 +191,28 @@ function updateUI(d, stale){
 }
 
 function openGraphPage(){
-  let date = document.getElementById("datePicker").value;
+  let date = getFormattedDate(); // ✅ ALWAYS correct format
   window.open("graph.html?date=" + date, "_blank");
 }
 
-document.getElementById("datePicker").valueAsDate = new Date();
+// ✅ Set default date in YYYY-MM-DD correctly
+function setTodayDate(){
+  let today = new Date();
+
+  let yyyy = today.getFullYear();
+  let mm = String(today.getMonth() + 1).padStart(2, '0');
+  let dd = String(today.getDate()).padStart(2, '0');
+
+  document.getElementById("datePicker").value = `${yyyy}-${mm}-${dd}`;
+}
+
+setTodayDate();
+
 document.getElementById("datePicker").addEventListener("change", fetchData);
 
 fetchData();
 setInterval(fetchData, 60000);
 
 </script>
-
 </body>
 </html>
