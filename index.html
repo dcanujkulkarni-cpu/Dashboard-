@@ -1,198 +1,211 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SCADA Dashboard</title>
+  <title>Decanter Dashboard</title>
 
   <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI";
-      background: #0b1220;
-      color: white;
-    }
+    body { margin:0; font-family:Segoe UI; background:#0b1220; color:white; }
+    .container { display:flex; }
 
-    header {
-      padding: 15px;
-      background: #111a2e;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .sidebar {
+      width:250px; background:#111a2e; padding:15px;
     }
 
     input {
-      padding: 6px;
-      font-size: 14px;
+      width:100%; padding:8px; margin-top:5px;
+      border-radius:5px; border:none;
     }
 
-    .container {
-      display: flex;
-      flex-direction: column;
-      padding: 15px;
-      gap: 20px;
+    button {
+      width:100%; margin-top:10px; padding:8px;
+      border:none; border-radius:5px; cursor:pointer;
     }
 
-    .basin {
-      background: #111a2e;
-      padding: 15px;
-      border-radius: 10px;
-    }
-
-    .title {
-      font-size: 18px;
-      margin-bottom: 10px;
-      font-weight: bold;
-      color: #4fc3f7;
-    }
+    .main { flex:1; padding:15px; }
 
     .grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:10px;
     }
 
     .card {
-      background: #0b1220;
-      padding: 10px;
-      border-radius: 6px;
-      text-align: center;
-      border: 1px solid #1e2a47;
+      background:#111a2e; padding:10px;
+      border-radius:6px; text-align:center;
     }
 
-    .label {
-      font-size: 12px;
-      color: #aaa;
+    .card-label { font-size:12px; color:#aaa; }
+    .card-value { font-size:18px; font-weight:bold; }
+
+    .status-row { margin-top:10px; }
+    .status { padding:8px; border-radius:5px; text-align:center; }
+
+    .green { background:#1b5e20; }
+    .red { background:#b71c1c; }
+    .yellow { background:#f57f17; }
+
+    .dot {
+      width:10px; height:10px; border-radius:50%;
+      display:inline-block;
     }
 
-    .value {
-      font-size: 18px;
-      font-weight: bold;
-      margin-top: 5px;
-    }
-
-    .status {
-      color: #00e676;
-    }
-
-    .error {
-      color: red;
-      margin-top: 10px;
-    }
+    .live-badge { margin-top:15px; }
   </style>
 </head>
 
 <body>
 
-<header>
-  <h2>SCADA Dashboard</h2>
-  <div>
-    Select Date:
-    <input type="date" id="datePicker">
-  </div>
-</header>
-
 <div class="container">
 
-  <!-- Basin 1 -->
-  <div class="basin">
-    <div class="title">C-Tech Basin 1</div>
-    <div class="grid" id="basin1"></div>
+  <div class="sidebar">
+    <h3>📅 Select Date</h3>
+
+    <!-- TEXT INPUT (CONTROLLED FORMAT) -->
+    <input type="text" id="datePicker" placeholder="YYYY-MM-DD" maxlength="10">
+
+    <button onclick="fetchData()">🔄 Refresh</button>
+
+    <div class="live-badge">
+      <div class="dot red" id="liveDot"></div>
+      <span id="liveLabel">🔴 Error</span>
+    </div>
   </div>
 
-  <!-- Basin 2 -->
-  <div class="basin">
-    <div class="title">C-Tech Basin 2</div>
-    <div class="grid" id="basin2"></div>
+  <div class="main">
+
+    <h1>⚙️ Decanter Dashboard</h1>
+    <p id="time">Loading...</p>
+
+    <!-- C1 -->
+    <h2>C-Tech 1</h2>
+    <div class="grid">
+      <div class="card"><span class="card-label">Level</span><div id="c1_lvl">--</div></div>
+      <div class="card"><span class="card-label">Inflow</span><div id="c1_flow">--</div></div>
+      <div class="card"><span class="card-label">Set RPM</span><div id="c1_setrpm">--</div></div>
+      <div class="card"><span class="card-label">Actual RPM</span><div id="c1_rpm">--</div></div>
+      <div class="card"><span class="card-label">Current</span><div id="c1_cur">--</div></div>
+      <div class="card"><span class="card-label">Power</span><div id="c1_pow">--</div></div>
+      <div class="card"><span class="card-label">Torque</span><div id="c1_tor">--</div></div>
+      <div class="card"><span class="card-label">Frequency</span><div id="c1_freq">--</div></div>
+      <div class="card"><span class="card-label">Cycle Total</span><div id="c1_ctot">--</div></div>
+      <div class="card"><span class="card-label">Cycle Rem</span><div id="c1_crem">--</div></div>
+    </div>
+    <div class="status-row">
+      <div class="status yellow" id="c1_status">--</div>
+    </div>
+
+    <!-- C2 -->
+    <h2>C-Tech 2</h2>
+    <div class="grid">
+      <div class="card"><span class="card-label">Level</span><div id="c2_lvl">--</div></div>
+      <div class="card"><span class="card-label">Inflow</span><div id="c2_flow">--</div></div>
+      <div class="card"><span class="card-label">Set RPM</span><div id="c2_setrpm">--</div></div>
+      <div class="card"><span class="card-label">Actual RPM</span><div id="c2_rpm">--</div></div>
+      <div class="card"><span class="card-label">Current</span><div id="c2_cur">--</div></div>
+      <div class="card"><span class="card-label">Power</span><div id="c2_pow">--</div></div>
+      <div class="card"><span class="card-label">Torque</span><div id="c2_tor">--</div></div>
+      <div class="card"><span class="card-label">Frequency</span><div id="c2_freq">--</div></div>
+      <div class="card"><span class="card-label">Cycle Total</span><div id="c2_ctot">--</div></div>
+      <div class="card"><span class="card-label">Cycle Rem</span><div id="c2_crem">--</div></div>
+    </div>
+    <div class="status-row">
+      <div class="status yellow" id="c2_status">--</div>
+    </div>
+
   </div>
-
-  <div id="error" class="error"></div>
-
 </div>
 
 <script>
 
-const API_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec"; // ⚠️ IMPORTANT
+// ================= CONFIG =================
+const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
-// ---------- PARAMETERS ----------
-const basin1Params = [
-  "C1_Level","C1_Inflow","C1_DecPos","C1_CycleStat",
-  "C1_CycleTot","C1_CycleRem","C1_SetRPM","C1_ActRPM",
-  "C1_Current_A","C1_Power_kW","C1_Torque_Nm","C1_Freq_Hz"
-];
+// ================= DATE FIX =================
+function setTodayDate() {
+  const t = new Date();
+  const yyyy = t.getFullYear();
+  const mm = String(t.getMonth() + 1).padStart(2, '0');
+  const dd = String(t.getDate()).padStart(2, '0');
 
-const basin2Params = [
-  "C2_Level","C2_Inflow","C2_DecPos","C2_CycleStat",
-  "C2_CycleTot","C2_CycleRem","C2_SetRPM","C2_ActRPM",
-  "C2_Current_A","C2_Power_kW","C2_Torque_Nm","C2_Freq_Hz"
-];
-
-// ---------- INIT ----------
-function createCards(containerId, params) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = "";
-
-  params.forEach(p => {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <div class="label">${p}</div>
-      <div class="value" id="${p}">--</div>
-    `;
-    container.appendChild(card);
-  });
+  document.getElementById("datePicker").value = `${yyyy}-${mm}-${dd}`;
 }
 
-// ---------- UPDATE UI ----------
-function updateUI(data) {
-  document.getElementById("error").innerText = "";
-
-  basin1Params.forEach(p => {
-    document.getElementById(p).innerText = data[p] ?? "--";
-  });
-
-  basin2Params.forEach(p => {
-    document.getElementById(p).innerText = data[p] ?? "--";
-  });
+// Auto-correct DD-MM-YYYY → YYYY-MM-DD
+function normalizeDate(v) {
+  const m = v.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  return v;
 }
 
-// ---------- FETCH ----------
-async function fetchData() {
-  const date = document.getElementById("datePicker").value;
+function getDate() {
+  let v = document.getElementById("datePicker").value.trim();
+  v = normalizeDate(v);
+  document.getElementById("datePicker").value = v;
 
-  let url = API_URL;
-  if (date) {
-    url += "?date=" + date;
-  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
 
-  try {
-    const res = await fetch(url);
-    const json = await res.json();
-
-    if (!json.success) {
-      document.getElementById("error").innerText = json.message;
-      return;
-    }
-
-    updateUI(json.lastData);
-
-  } catch (err) {
-    document.getElementById("error").innerText = "Connection Error";
-  }
+  document.getElementById("time").innerText = "⚠️ Use YYYY-MM-DD format";
+  return "";
 }
 
-// ---------- AUTO REFRESH ----------
-setInterval(fetchData, 2000);
+// ================= UI =================
+function g(d, k) { return d[k] ?? "--"; }
 
-// ---------- INIT LOAD ----------
+function updateUI(d) {
+  document.getElementById("c1_lvl").innerText = g(d,"C1_Level");
+  document.getElementById("c1_flow").innerText = g(d,"C1_Inflow");
+  document.getElementById("c1_setrpm").innerText = g(d,"C1_SetRPM");
+  document.getElementById("c1_rpm").innerText = g(d,"C1_ActRPM");
+  document.getElementById("c1_cur").innerText = g(d,"C1_Current_A");
+  document.getElementById("c1_pow").innerText = g(d,"C1_Power_kW");
+  document.getElementById("c1_tor").innerText = g(d,"C1_Torque_Nm");
+  document.getElementById("c1_freq").innerText = g(d,"C1_Freq_Hz");
+  document.getElementById("c1_ctot").innerText = g(d,"C1_CycleTot");
+  document.getElementById("c1_crem").innerText = g(d,"C1_CycleRem");
+
+  document.getElementById("c2_lvl").innerText = g(d,"C2_Level");
+  document.getElementById("c2_flow").innerText = g(d,"C2_Inflow");
+  document.getElementById("c2_setrpm").innerText = g(d,"C2_SetRPM");
+  document.getElementById("c2_rpm").innerText = g(d,"C2_ActRPM");
+  document.getElementById("c2_cur").innerText = g(d,"C2_Current_A");
+  document.getElementById("c2_pow").innerText = g(d,"C2_Power_kW");
+  document.getElementById("c2_tor").innerText = g(d,"C2_Torque_Nm");
+  document.getElementById("c2_freq").innerText = g(d,"C2_Freq_Hz");
+  document.getElementById("c2_ctot").innerText = g(d,"C2_CycleTot");
+  document.getElementById("c2_crem").innerText = g(d,"C2_CycleRem");
+
+  document.getElementById("c1_status").innerText = g(d,"C1_DecPos");
+  document.getElementById("c2_status").innerText = g(d,"C2_DecPos");
+
+  document.getElementById("time").innerText =
+    "Last Updated: " + (d.Timestamp || "--");
+}
+
+// ================= FETCH =================
+function fetchData() {
+  const date = getDate();
+  let url = BASE_URL;
+  if (date) url += "?date=" + date;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) {
+        document.getElementById("time").innerText = res.message;
+        return;
+      }
+      updateUI(res.lastData);
+    })
+    .catch(() => {
+      document.getElementById("time").innerText = "❌ Connection Error";
+    });
+}
+
+// ================= INIT =================
 window.onload = () => {
-
-  // Set today's date default
-  const today = new Date().toISOString().split("T")[0];
-  document.getElementById("datePicker").value = today;
-
-  createCards("basin1", basin1Params);
-  createCards("basin2", basin2Params);
-
+  setTodayDate();
   fetchData();
+  setInterval(fetchData, 5000);
 };
 
 </script>
