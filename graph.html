@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Trend Graph Panel</title>
+
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Segoe UI;
+background:#0b1220;
+color:white;
+}
+
+header{
+background:#111827;
+padding:20px;
+text-align:center;
+font-size:30px;
+font-weight:700;
+border-bottom:2px solid #1e293b;
+}
+
+.topbar{
+display:flex;
+gap:15px;
+padding:20px;
+background:#111827;
+align-items:center;
+flex-wrap:wrap;
+}
+
+input,select,button{
+padding:10px 14px;
+border-radius:8px;
+border:none;
+font-size:14px;
+}
+
+select,input{
+background:#1e293b;
+color:white;
+}
+
+button{
+background:#2563eb;
+color:white;
+font-weight:bold;
+cursor:pointer;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+.panel{
+margin:25px;
+background:#111827;
+padding:25px;
+border-radius:15px;
+border:1px solid #334155;
+}
+
+.panel h2{
+margin-bottom:20px;
+}
+
+.controlRow{
+display:flex;
+gap:15px;
+flex-wrap:wrap;
+margin-bottom:20px;
+}
+
+.graph{
+height:500px;
+background:white;
+border-radius:10px;
+}
+
+.uploadBox{
+margin-left:auto;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+📈 Decanter Historical Trend Panel
+</header>
+
+<div class="topbar">
+
+<label>Select Date:</label>
+<input type="date" id="datePick">
+
+<button onclick="loadSheetData()">
+Load Sheet Data
+</button>
+
+<div class="uploadBox">
+<input type="file" id="fileInput" accept=".csv">
+<button onclick="loadCSV()">
+Upload CSV
+</button>
+</div>
+
+</div>
+
+
+<!-- BASIN 1 -->
+<div class="panel">
+
+<h2>⚙ C-Tech Basin 1 Trends</h2>
+
+<div class="controlRow">
+
+<label>X Axis</label>
+
+<select id="c1x"></select>
+
+<label>Y Axis</label>
+
+<select id="c1y"></select>
+
+<button onclick="plotC1()">
+Plot Basin 1
+</button>
+
+</div>
+
+<div id="graph1" class="graph"></div>
+
+</div>
+
+
+
+<!-- BASIN 2 -->
+<div class="panel">
+
+<h2>⚙ C-Tech Basin 2 Trends</h2>
+
+<div class="controlRow">
+
+<label>X Axis</label>
+
+<select id="c2x"></select>
+
+<label>Y Axis</label>
+
+<select id="c2y"></select>
+
+<button onclick="plotC2()">
+Plot Basin 2
+</button>
+
+</div>
+
+<div id="graph2" class="graph"></div>
+
+</div>
+
+
+
+
+<script>
+
+const BASE_URL=
+"https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
+
+let fullData=[];
+
+const fields=[
+
+"Timestamp",
+
+"C1_Level",
+"C1_Inflow",
+"C1_DecPos",
+"C1_CycleTot",
+"C1_CycleRem",
+"C1_SetRPM",
+"C1_ActRPM",
+"C1_Current_A",
+"C1_Power_kW",
+"C1_Torque_Nm",
+"C1_Freq_Hz",
+
+"C2_Level",
+"C2_Inflow",
+"C2_DecPos",
+"C2_CycleTot",
+"C2_CycleRem",
+"C2_SetRPM",
+"C2_ActRPM",
+"C2_Current_A",
+"C2_Power_kW",
+"C2_Torque_Nm",
+"C2_Freq_Hz"
+
+];
+
+
+function fillDropdowns(){
+
+fields.forEach(f=>{
+
+if(f.startsWith("C1")||f=="Timestamp"){
+c1x.add(new Option(f,f));
+c1y.add(new Option(f,f));
+}
+
+if(f.startsWith("C2")||f=="Timestamp"){
+c2x.add(new Option(f,f));
+c2y.add(new Option(f,f));
+}
+
+});
+
+c1x.value="Timestamp";
+c2x.value="Timestamp";
+
+c1y.value="C1_Level";
+c2y.value="C2_Level";
+
+}
+
+fillDropdowns();
+
+
+
+function todayDefault(){
+
+let d=new Date();
+document.getElementById("datePick").value=
+d.toISOString().split("T")[0];
+
+}
+todayDefault();
+
+
+
+async function loadSheetData(){
+
+let date=
+document.getElementById("datePick").value;
+
+let url=
+BASE_URL+"?date="+date+"&history=1&t="+Date.now();
+
+try{
+
+let r=await fetch(url);
+
+let data=await r.json();
+
+if(data.rows){
+
+fullData=data.rows;
+
+alert(
+"Loaded "+
+fullData.length+
+" records"
+);
+
+}
+else{
+
+alert(
+"No historical rows returned.\nUpdate Apps Script for history mode."
+);
+
+}
+
+}
+catch(e){
+
+alert("Fetch Error");
+
+}
+
+}
+
+
+
+function plotC1(){
+
+let xField=
+document.getElementById("c1x").value;
+
+let yField=
+document.getElementById("c1y").value;
+
+drawPlot(
+"graph1",
+xField,
+yField
+);
+
+}
+
+
+function plotC2(){
+
+let xField=
+document.getElementById("c2x").value;
+
+let yField=
+document.getElementById("c2y").value;
+
+drawPlot(
+"graph2",
+xField,
+yField
+);
+
+}
+
+
+
+function drawPlot(div,xField,yField){
+
+if(fullData.length==0){
+alert("Load data first");
+return;
+}
+
+let x=
+fullData.map(r=>r[xField]);
+
+let y=
+fullData.map(r=>
+parseFloat(r[yField])||0
+);
+
+Plotly.newPlot(
+div,
+
+[{
+x:x,
+y:y,
+mode:"lines+markers",
+name:yField
+}],
+
+{
+title:
+yField+" vs "+xField,
+
+xaxis:{
+title:xField
+},
+
+yaxis:{
+title:yField
+},
+
+dragmode:"zoom",
+
+template:"plotly_dark"
+
+}
+
+);
+
+}
+
+
+
+function loadCSV(){
+
+let file=
+document.getElementById("fileInput").files[0];
+
+if(!file)return;
+
+let reader=
+new FileReader();
+
+reader.onload=function(e){
+
+let lines=
+e.target.result.split("\n");
+
+let headers=
+lines[0].split(",");
+
+fullData=[];
+
+for(
+let i=1;
+i<lines.length;
+i++
+){
+
+let vals=
+lines[i].split(",");
+
+let obj={};
+
+headers.forEach(
+(h,j)=>
+obj[h.trim()]
+=
+vals[j]
+);
+
+fullData.push(obj);
+
+}
+
+alert(
+"CSV loaded: "+
+fullData.length+
+" rows"
+);
+
+};
+
+reader.readAsText(file);
+
+}
+
+
+
+</script>
+
+</body>
+</html>
