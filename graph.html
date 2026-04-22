@@ -3,7 +3,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Decanter Advanced Analytics</title>
+<title>Advanced Analytics Graph Panel</title>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 
 <style>
@@ -17,25 +17,25 @@ color:white;
 header{
 background:#111827;
 padding:22px;
+text-align:center;
 font-size:30px;
 font-weight:700;
-text-align:center;
 border-bottom:2px solid #1e293b;
 }
 
 .topbar{
 display:flex;
-gap:14px;
-flex-wrap:wrap;
+gap:15px;
 padding:18px;
 background:#111827;
+flex-wrap:wrap;
 align-items:center;
 }
 
-input,select,button{
+select,input,button{
 padding:10px 14px;
-border:none;
 border-radius:8px;
+border:none;
 font-size:14px;
 }
 
@@ -47,7 +47,7 @@ color:white;
 button{
 background:#2563eb;
 color:white;
-font-weight:700;
+font-weight:bold;
 cursor:pointer;
 }
 
@@ -56,242 +56,506 @@ background:#1d4ed8;
 }
 
 .panel{
-margin:24px;
+margin:22px;
 background:#111827;
-padding:24px;
-border-radius:15px;
+padding:25px;
+border-radius:16px;
 border:1px solid #334155;
 }
 
-.controlRow{
-display:flex;
-gap:15px;
-flex-wrap:wrap;
-margin-bottom:18px;
-align-items:center;
-}
-
 .graph{
-height:600px;
+height:650px;
 background:white;
 border-radius:12px;
 }
 
+.controlRow{
+display:flex;
+flex-wrap:wrap;
+gap:14px;
+margin-bottom:18px;
+align-items:center;
+}
+
+.multiBox{
+background:#1e293b;
+padding:14px;
+border-radius:10px;
+min-width:280px;
+max-height:220px;
+overflow:auto;
+}
+
+.chk{
+display:block;
+margin:6px 0;
+}
+
+.analyticsBox{
+background:#020617;
+padding:14px;
+border-radius:10px;
+display:flex;
+gap:20px;
+flex-wrap:wrap;
+}
+
 .stats{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-gap:16px;
-margin:20px 24px;
-}
-
-.card{
-background:#111827;
+margin-top:20px;
 padding:18px;
-border-radius:14px;
-border:1px solid #334155;
+background:#020617;
+border-radius:12px;
+font-family:monospace;
 }
 
-.card h3{
-color:#60a5fa;
-margin-bottom:12px;
+.small{
+font-size:13px;
+color:#cbd5e1;
 }
 
-.metric{
-font-family:Consolas;
-line-height:1.8;
-font-size:14px;
-}
-
-.badge{
-background:#1e40af;
-padding:5px 10px;
-border-radius:8px;
-}
-
-.liveBadge{
-padding:8px 14px;
-background:#14532d;
-border-radius:8px;
-font-weight:600;
+.residualGraph{
+height:300px;
+margin-top:20px;
+background:white;
+border-radius:12px;
 }
 </style>
 </head>
+
 <body>
 
 <header>
-📈 Decanter Live Trends + Regression Analytics
+📈 Decanter Predictive Analytics Dashboard
 </header>
 
 <div class="topbar">
-
-<label>Date</label>
+<label>Select Date:</label>
 <input type="date" id="datePick">
 
 <button onclick="loadSheetData()">
 Load Data
 </button>
 
-<div class="liveBadge" id="liveStatus">
-⚪ Historical Mode
-</div>
-
-<label>Analysis</label>
-<select id="analysisMode">
-<option value="raw">Raw Trend</option>
-<option value="linear">Linear Regression</option>
-<option value="combined">Linear + Ridge/Lasso</option>
-<option value="all" selected>All Overlays</option>
-</select>
-
-<div style="margin-left:auto">
 <input type="file" id="fileInput" accept=".csv">
-<button onclick="loadCSV()">Upload CSV</button>
+<button onclick="loadCSV()">
+Upload CSV
+</button>
+
+<span id="liveStatus"></span>
 </div>
 
-</div>
-
-<div class="stats">
-<div class="card">
-<h3>Basin 1 Model Summary</h3>
-<div id="stats1" class="metric">Awaiting plot...</div>
-</div>
-
-<div class="card">
-<h3>Basin 2 Model Summary</h3>
-<div id="stats2" class="metric">Awaiting plot...</div>
-</div>
-</div>
 
 <div class="panel">
 <h2>⚙ Basin 1 Analytics</h2>
+
 <div class="controlRow">
-<label>X</label>
-<select id="c1x"></select>
-<label>Y</label>
-<select id="c1y"></select>
-<button onclick="plotC1()">Plot Basin 1</button>
+
+<div class="multiBox" id="c1box"></div>
+
+<div class="analyticsBox">
+<label><input type="checkbox" id="raw1" checked>Raw Trend</label>
+<label><input type="checkbox" id="fit1" checked>Ridge/Lasso Fit</label>
+<label><input type="checkbox" id="ma1" checked>Moving Avg</label>
+<label><input type="checkbox" id="cb1" checked>Confidence Band</label>
 </div>
+
+<button onclick="plotBasin('C1')">
+Generate Analytics Plot
+</button>
+
+</div>
+
 <div id="graph1" class="graph"></div>
+<div id="resid1" class="residualGraph"></div>
+<div id="stats1" class="stats"></div>
 </div>
+
 
 <div class="panel">
 <h2>⚙ Basin 2 Analytics</h2>
+
 <div class="controlRow">
-<label>X</label>
-<select id="c2x"></select>
-<label>Y</label>
-<select id="c2y"></select>
-<button onclick="plotC2()">Plot Basin 2</button>
+
+<div class="multiBox" id="c2box"></div>
+
+<div class="analyticsBox">
+<label><input type="checkbox" id="raw2" checked>Raw Trend</label>
+<label><input type="checkbox" id="fit2" checked>Ridge/Lasso Fit</label>
+<label><input type="checkbox" id="ma2" checked>Moving Avg</label>
+<label><input type="checkbox" id="cb2" checked>Confidence Band</label>
 </div>
+
+<button onclick="plotBasin('C2')">
+Generate Analytics Plot
+</button>
+
+</div>
+
 <div id="graph2" class="graph"></div>
+<div id="resid2" class="residualGraph"></div>
+<div id="stats2" class="stats"></div>
 </div>
+
 
 <script>
 
 const BASE_URL=
-"https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
+"YOUR_WEBAPP_URL_HERE";
 
 let fullData=[];
-let liveInterval=null;
+let liveTimer=null;
 
-const fields=[
-"Timestamp",
-"C1_Level","C1_Inflow","C1_CycleTot","C1_CycleRem",
-"C1_SetRPM","C1_ActRPM","C1_Current_A",
-"C1_Power_kW","C1_Torque_Nm","C1_Freq_Hz",
-"C2_Level","C2_Inflow","C2_CycleTot","C2_CycleRem",
-"C2_SetRPM","C2_ActRPM","C2_Current_A",
-"C2_Power_kW","C2_Torque_Nm","C2_Freq_Hz"
+const c1Fields=[
+"C1_Level",
+"C1_Inflow",
+"C1_CycleTot",
+"C1_CycleRem",
+"C1_SetRPM",
+"C1_ActRPM",
+"C1_Current_A",
+"C1_Power_kW",
+"C1_Torque_Nm",
+"C1_Freq_Hz"
 ];
 
-function fillDropdowns(){
-fields.forEach(f=>{
-if(f.startsWith('C1')||f=='Timestamp'){
-c1x.add(new Option(f,f));
-c1y.add(new Option(f,f));
-}
-if(f.startsWith('C2')||f=='Timestamp'){
-c2x.add(new Option(f,f));
-c2y.add(new Option(f,f));
-}
-});
+const c2Fields=[
+"C2_Level",
+"C2_Inflow",
+"C2_CycleTot",
+"C2_CycleRem",
+"C2_SetRPM",
+"C2_ActRPM",
+"C2_Current_A",
+"C2_Power_kW",
+"C2_Torque_Nm",
+"C2_Freq_Hz"
+];
 
-c1x.value='Timestamp';
-c2x.value='Timestamp';
-c1y.value='C1_Power_kW';
-c2y.value='C2_Power_kW';
-}
-fillDropdowns();
 
 function todayDefault(){
 let d=new Date();
 datePick.value=d.toISOString().split('T')[0];
 }
+
 todayDefault();
 
-async function loadSheetData(){
-try{
-let date=datePick.value;
-let url=BASE_URL+"?date="+date+"&history=1&t="+Date.now();
 
+function buildSelectors(){
+
+c1Fields.forEach(f=>{
+let d=document.createElement('label');
+d.className='chk';
+d.innerHTML=`<input checked type='checkbox' value='${f}'> ${f}`;
+c1box.appendChild(d);
+});
+
+c2Fields.forEach(f=>{
+let d=document.createElement('label');
+d.className='chk';
+d.innerHTML=`<input checked type='checkbox' value='${f}'> ${f}`;
+c2box.appendChild(d);
+});
+
+}
+
+buildSelectors();
+
+
+function parseTime(t){
+if(!t) return null;
+return new Date(String(t).replace(' ','T'));
+}
+
+
+async function loadSheetData(){
+
+let date=datePick.value;
+let today=(new Date()).toISOString().split('T')[0];
+
+let url=
+BASE_URL+
+"?date="+date+
+"&history=1&t="+
+Date.now();
+
+try{
 let r=await fetch(url);
 let data=await r.json();
 
 if(data.rows){
 fullData=data.rows;
 alert('Loaded '+fullData.length+' records');
-enableLiveMode();
+
+if(date===today){
+startLiveMode();
+}else{
+stopLiveMode();
 }
-else{
+
+}else{
 alert('No rows returned');
 }
-}
-catch(e){
+
+}catch(e){
 alert('Fetch Error');
 console.log(e);
 }
 }
 
-function enableLiveMode(){
-if(liveInterval) clearInterval(liveInterval);
 
-let today=(new Date()).toISOString().split('T')[0];
+function startLiveMode(){
+stopLiveMode();
+liveStatus.innerHTML='🟢 Live Auto Updating';
 
-if(datePick.value===today){
-
-liveStatus.innerHTML='🟢 Live Streaming Mode';
-
-liveInterval=setInterval(async()=>{
-try{
-let r=await fetch(
-BASE_URL+
-'?date='+datePick.value+
-'&history=1&t='+Date.now()
-);
-let data=await r.json();
-if(data.rows){
-fullData=data.rows;
-if(document.getElementById('graph1').data) plotC1();
-if(document.getElementById('graph2').data) plotC2();
-}
-}
-catch(e){console.log(e)}
+liveTimer=setInterval(async()=>{
+await loadSheetDataSilently();
+plotBasin('C1');
+plotBasin('C2');
 },15000);
+}
+
+function stopLiveMode(){
+if(liveTimer) clearInterval(liveTimer);
+}
+
+
+async function loadSheetDataSilently(){
+let date=datePick.value;
+let url=BASE_URL+'?date='+date+'&history=1&t='+Date.now();
+let r=await fetch(url);
+let d=await r.json();
+if(d.rows) fullData=d.rows;
+}
+
+
+function movingAverage(a,w=10){
+let out=[];
+for(let i=0;i<a.length;i++){
+let s=Math.max(0,i-w+1);
+let p=a.slice(s,i+1);
+out.push(p.reduce((m,v)=>m+v,0)/p.length);
+}
+return out;
+}
+
+
+function ridgeFit(x,y){
+let n=x.length;
+let lam=.5;
+let sx=0,sy=0,sxy=0,sxx=0;
+
+for(let i=0;i<n;i++){
+sx+=x[i];
+sy+=y[i];
+sxy+=x[i]*y[i];
+sxx+=x[i]*x[i];
+}
+
+let m=(n*sxy-sx*sy)/(n*sxx-sx*sx+lam);
+let b=(sy-m*sx)/n;
+
+let fit=x.map(v=>m*v+b);
+
+let ssr=0,sst=0;
+let ym=sy/n;
+
+for(let i=0;i<n;i++){
+ssr+=(y[i]-fit[i])**2;
+sst+=(y[i]-ym)**2;
+}
+
+let r2=1-ssr/sst;
+
+return {m,b,fit,r2};
+}
+
+
+function confidenceBand(yhat,res){
+let se=Math.sqrt(
+res.reduce((a,b)=>a+b*b,0)/res.length
+);
+
+return {
+upper:yhat.map(v=>v+1.96*se),
+lower:yhat.map(v=>v-1.96*se)
+};
+}
+
+
+function selectedFields(prefix){
+let box=(prefix=='C1')?
+c1box:c2box;
+
+return [...box.querySelectorAll(
+'input:checked'
+)].map(e=>e.value);
+}
+
+
+function plotBasin(prefix){
+
+if(!fullData.length){
+alert('Load data first');
+return;
+}
+
+let chosen=selectedFields(prefix);
+
+let timestamps=
+fullData.map(r=>r.Timestamp);
+
+let traces=[];
+let stats='';
+
+chosen.forEach((field,k)=>{
+
+let y=fullData.map(r=>
+parseFloat(r[field])||0
+);
+
+let xnum=[...Array(y.length).keys()];
+
+if(document.getElementById(
+prefix=='C1'?'raw1':'raw2'
+).checked){
+
+traces.push({
+x:timestamps,
+y:y,
+mode:'lines',
+name:field
+});
+}
+
+let fit=ridgeFit(xnum,y);
+
+if(document.getElementById(
+prefix=='C1'?'fit1':'fit2'
+).checked){
+
+traces.push({
+x:timestamps,
+y:fit.fit,
+mode:'lines',
+name:field+' Ridge/Lasso Fit'
+});
+}
+
+if(document.getElementById(
+prefix=='C1'?'ma1':'ma2'
+).checked){
+
+traces.push({
+x:timestamps,
+y:movingAverage(y),
+mode:'lines',
+name:field+' Moving Avg'
+});
+}
+
+if(document.getElementById(
+prefix=='C1'?'cb1':'cb2'
+).checked){
+
+let res=y.map((v,i)=>v-fit.fit[i]);
+let band=confidenceBand(fit.fit,res);
+
+traces.push({
+x:timestamps,
+y:band.upper,
+line:{width:0},
+showlegend:false,
+hoverinfo:'skip'
+});
+
+traces.push({
+x:timestamps,
+y:band.lower,
+fill:'tonexty',
+name:field+' Conf Band',
+line:{width:0}
+});
+}
+
+stats+=
+field+
+' | slope='+fit.m.toFixed(4)+
+' | intercept='+fit.b.toFixed(4)+
+' | R²='+fit.r2.toFixed(4)+
+'<br>';
+
+if(k===0){
+plotResidual(prefix,timestamps,
+y,fit.fit);
+}
+
+});
+
+Plotly.newPlot(
+prefix=='C1'?'graph1':'graph2',
+traces,
+{
+title:
+prefix+' Multi-Variable Trends',
+
+template:'plotly_dark',
+
+xaxis:{
+title:'Timestamp',
+tickangle:-30,
+automargin:true,
+type:'date'
+},
+
+yaxis:{
+title:'Parameters'
+},
+
+legend:{
+orientation:'h'
+}
+}
+);
+
+(
+prefix=='C1'?
+stats1:
+stats2
+).innerHTML=stats;
 
 }
-else{
-liveStatus.innerHTML='⚪ Historical Mode';
+
+
+function plotResidual(prefix,x,y,fit){
+
+let res=y.map((v,i)=>v-fit[i]);
+
+Plotly.newPlot(
+prefix=='C1'?'resid1':'resid2',
+[{x:x,y:res,
+mode:'markers',
+name:'Residuals'}],
+{
+title:'Residual Error Plot',
+template:'plotly_dark',
+xaxis:{title:'Timestamp',type:'date'},
+yaxis:{title:'Error'}
 }
+);
+
 }
+
 
 function loadCSV(){
 let file=fileInput.files[0];
 if(!file)return;
 
-let reader=new FileReader();
-reader.onload=function(e){
-let lines=e.target.result.trim().split(/\r?\n/);
+let r=new FileReader();
+
+r.onload=function(e){
+let lines=e.target.result.trim().split('\n');
 let headers=lines[0].split(',');
+
 fullData=[];
 
 for(let i=1;i<lines.length;i++){
@@ -300,146 +564,16 @@ let obj={};
 headers.forEach((h,j)=>obj[h.trim()]=vals[j]);
 fullData.push(obj);
 }
-alert('CSV loaded '+fullData.length+' rows');
-};
-reader.readAsText(file);
-}
 
-function mean(a){
-return a.reduce((s,v)=>s+v,0)/a.length;
-}
-
-function r2(y,p){
-let ym=mean(y);
-let sse=0,sst=0;
-for(let i=0;i<y.length;i++){
-sse+=(y[i]-p[i])**2;
-sst+=(y[i]-ym)**2;
-}
-return 1-sse/sst;
-}
-
-function linearFit(x,y){
-let n=x.length;
-let sx=0,sy=0,sxy=0,sxx=0;
-for(let i=0;i<n;i++){
-sx+=x[i];
-sy+=y[i];
-sxy+=x[i]*y[i];
-sxx+=x[i]*x[i];
-}
-let m=(n*sxy-sx*sy)/(n*sxx-sx*sx);
-let b=(sy-m*sx)/n;
-let pred=x.map(v=>b+m*v);
-return {intercept:b,slope:m,pred,r2:r2(y,pred)};
-}
-
-function ridgeFit(x,y,lambda=3){
-let n=x.length;
-let sx=0,sy=0,sxy=0,sxx=0;
-for(let i=0;i<n;i++){
-sx+=x[i];
-sy+=y[i];
-sxy+=x[i]*y[i];
-sxx+=x[i]*x[i];
-}
-let m=(n*sxy-sx*sy)/(n*sxx-sx*sx+lambda);
-let b=(sy-m*sx)/n;
-let pred=x.map(v=>b+m*v);
-return {intercept:b,slope:m,pred,r2:r2(y,pred)};
-}
-
-function plotC1(){
-drawPlot('graph1','c1x','c1y','stats1');
-}
-
-function plotC2(){
-drawPlot('graph2','c2x','c2y','stats2');
-}
-
-function drawPlot(div,xid,yid,statsBox){
-
-if(fullData.length<3){
-alert('Load data first');
-return;
-}
-
-let xField=document.getElementById(xid).value;
-let yField=document.getElementById(yid).value;
-
-let y=fullData
-.map(r=>parseFloat(r[yField]))
-.filter(v=>!isNaN(v));
-
-let x;
-
-if(xField==='Timestamp'){
-x=Array.from({length:y.length},(_,i)=>i+1);
-}
-else{
-let xnum=fullData
-.map(r=>parseFloat(r[xField]))
-.filter(v=>!isNaN(v));
-x=(xnum.length===y.length)?xnum:
-Array.from({length:y.length},(_,i)=>i+1);
-}
-
-let linear=linearFit(x,y);
-let ridge=ridgeFit(x,y);
-
-let mode=analysisMode.value;
-let traces=[];
-
-if(mode==='raw'||mode==='all'){
-traces.push({x,y,mode:'lines',name:'Actual'});
-}
-
-if(mode==='linear'||mode==='all'||mode==='combined'){
-traces.push({
-x,
-y:linear.pred,
-mode:'lines',
-name:'Linear Fit'
-});
-}
-
-if(mode==='combined'||mode==='all'){
-traces.push({
-x,
-y:ridge.pred,
-mode:'lines',
-name:'Ridge/Lasso Fit'
-});
-}
-
-Plotly.newPlot(
-div,
-traces,
-{
-title:yField+' Analytics',
-template:'plotly_dark',
-hovermode:'x unified',
-xaxis:{title:xField},
-yaxis:{title:yField}
-}
+alert(
+'CSV loaded '+fullData.length+' rows'
 );
-
-document.getElementById(statsBox).innerHTML=
-"<span class='badge'>LINEAR</span><br>"+
-"Intercept="+linear.intercept.toFixed(4)+"<br>"+
-"Slope="+linear.slope.toFixed(4)+"<br>"+
-"R²="+linear.r2.toFixed(4)+
-"<br><br>"+
-"<span class='badge'>RIDGE/LASSO</span><br>"+
-"Intercept="+ridge.intercept.toFixed(4)+"<br>"+
-"Slope="+ridge.slope.toFixed(4)+"<br>"+
-"R²="+ridge.r2.toFixed(4);
-}
-
-window.onload=async()=>{
-await loadSheetData();
 };
+
+r.readAsText(file);
+}
 
 </script>
+
 </body>
 </html>
