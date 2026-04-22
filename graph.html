@@ -349,6 +349,9 @@ if(field==='NONE') return;
 
 let y=fullData.map(r=>{
 let v=parseFloat(r[field])||0;
+if(field.includes('Freq')||field.includes('Torque')||field.includes('ActRPM')){
+v=Math.abs(v); // invert negatives to positive for plotting
+}
 if(field.includes('Level')) v=v/1000; // mm to m
 return v;
 });
@@ -389,7 +392,7 @@ type:'category',
 tickangle:-35,
 automargin:true
 },
-yaxis:{title:'Parameter Value (Levels shown in m)'},
+yaxis:{title:'Parameter'},
 legend:{orientation:'h'}
 },
 {responsive:true}
