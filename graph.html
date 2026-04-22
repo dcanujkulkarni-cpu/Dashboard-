@@ -2,12 +2,11 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Advanced Trend Analytics Panel</title>
+<title>Trend Graph Panel</title>
 
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 
 <style>
-
 body{
 margin:0;
 font-family:Segoe UI;
@@ -17,7 +16,7 @@ color:white;
 
 header{
 background:#111827;
-padding:22px;
+padding:20px;
 text-align:center;
 font-size:30px;
 font-weight:700;
@@ -73,67 +72,49 @@ display:flex;
 gap:15px;
 flex-wrap:wrap;
 margin-bottom:20px;
-align-items:center;
 }
 
 .graph{
-height:560px;
+height:500px;
 background:white;
-border-radius:12px;
+border-radius:10px;
 }
 
 .uploadBox{
 margin-left:auto;
 }
-
-.analytics{
-margin-top:18px;
-padding:15px;
-background:#1e293b;
-border-radius:10px;
-line-height:1.8;
-font-size:15px;
-}
-
-.badge{
-background:#0f172a;
-padding:8px 12px;
-border-radius:8px;
-border:1px solid #334155;
-}
-
 </style>
+
 </head>
 
 <body>
 
 <header>
-📈 Decanter Advanced Analytics Panel
+📈 Decanter Parameters Graph Panel
 </header>
 
 
 <div class="topbar">
 
-<label>Select Date</label>
+<label>Select Date:</label>
+
 <input type="date" id="datePick">
 
 <button onclick="loadSheetData()">
 Load Sheet Data
 </button>
 
-<button onclick="toggleLive()">
-Toggle Live Today
-</button>
-
-<div class="badge" id="liveStatus">
-Live OFF
-</div>
 
 <div class="uploadBox">
-<input type="file" id="fileInput" accept=".csv">
+
+<input type="file"
+id="fileInput"
+accept=".csv">
+
 <button onclick="loadCSV()">
 Upload CSV
 </button>
+
 </div>
 
 </div>
@@ -144,29 +125,15 @@ Upload CSV
 
 <div class="panel">
 
-<h2>⚙ Basin 1 Analytics</h2>
+<h2>⚙ C-Tech Basin 1 Trends</h2>
 
 <div class="controlRow">
 
-<label>X</label>
+<label>X Axis</label>
 <select id="c1x"></select>
 
-<label>Y</label>
+<label>Y Axis</label>
 <select id="c1y"></select>
-
-<label>Plot</label>
-<select id="c1plot">
-<option value="line">Line Trend</option>
-<option value="scatter">Scatter</option>
-</select>
-
-<label>Regression</label>
-<select id="c1reg">
-<option value="none">None</option>
-<option value="linear">Linear Regression</option>
-<option value="poly">Polynomial Trend</option>
-<option value="smooth">Moving Average</option>
-</select>
 
 <button onclick="plotC1()">
 Plot Basin 1
@@ -175,10 +142,6 @@ Plot Basin 1
 </div>
 
 <div id="graph1" class="graph"></div>
-
-<div id="stats1" class="analytics">
-No analysis yet
-</div>
 
 </div>
 
@@ -189,29 +152,15 @@ No analysis yet
 
 <div class="panel">
 
-<h2>⚙ Basin 2 Analytics</h2>
+<h2>⚙ C-Tech Basin 2 Trends</h2>
 
 <div class="controlRow">
 
-<label>X</label>
+<label>X Axis</label>
 <select id="c2x"></select>
 
-<label>Y</label>
+<label>Y Axis</label>
 <select id="c2y"></select>
-
-<label>Plot</label>
-<select id="c2plot">
-<option value="line">Line Trend</option>
-<option value="scatter">Scatter</option>
-</select>
-
-<label>Regression</label>
-<select id="c2reg">
-<option value="none">None</option>
-<option value="linear">Linear Regression</option>
-<option value="poly">Polynomial Trend</option>
-<option value="smooth">Moving Average</option>
-</select>
 
 <button onclick="plotC2()">
 Plot Basin 2
@@ -221,20 +170,17 @@ Plot Basin 2
 
 <div id="graph2" class="graph"></div>
 
-<div id="stats2" class="analytics">
-No analysis yet
 </div>
 
-</div>
+
 
 <script>
 
-const BASE_URL=
+const BASE_URL =
 "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
 
+
 let fullData=[];
-let liveMode=false;
-let timer=null;
 
 
 const fields=[
@@ -243,6 +189,7 @@ const fields=[
 
 "C1_Level",
 "C1_Inflow",
+"C1_DecPos",
 "C1_CycleTot",
 "C1_CycleRem",
 "C1_SetRPM",
@@ -254,6 +201,7 @@ const fields=[
 
 "C2_Level",
 "C2_Inflow",
+"C2_DecPos",
 "C2_CycleTot",
 "C2_CycleRem",
 "C2_SetRPM",
@@ -266,16 +214,17 @@ const fields=[
 ];
 
 
+
 function fillDropdowns(){
 
 fields.forEach(f=>{
 
-if(f.startsWith("C1")||f=="Timestamp"){
+if(f.startsWith("C1") || f=="Timestamp"){
 c1x.add(new Option(f,f));
 c1y.add(new Option(f,f));
 }
 
-if(f.startsWith("C2")||f=="Timestamp"){
+if(f.startsWith("C2") || f=="Timestamp"){
 c2x.add(new Option(f,f));
 c2y.add(new Option(f,f));
 }
@@ -295,209 +244,146 @@ fillDropdowns();
 
 
 function todayDefault(){
+
 let d=new Date();
-datePick.value=d.toISOString().split("T")[0];
+
+document.getElementById("datePick").value=
+d.toISOString().split("T")[0];
+
 }
+
 todayDefault();
 
-
-
-function toggleLive(){
-
-liveMode=!liveMode;
-
-liveStatus.innerHTML=
-liveMode?"🟢 Live ON":"Live OFF";
-
-if(liveMode){
-
-loadSheetData();
-
-timer=setInterval(
-loadSheetData,
-60000
-);
-
-}
-else{
-clearInterval(timer);
-}
-
-}
 
 
 
 async function loadSheetData(){
 
-let date=datePick.value;
+let date=
+document.getElementById("datePick").value;
+
 
 let url=
 BASE_URL+
 "?date="+date+
 "&history=1&t="+Date.now();
 
+
 try{
 
 let r=await fetch(url);
+
 let data=await r.json();
 
 if(data.rows){
 
 fullData=data.rows;
 
-if(date==new Date().toISOString().split("T")[0]){
-console.log("Live today mode");
-}
+alert(
+"Loaded "+
+fullData.length+
+" records"
+);
 
 }
 else{
-alert("History rows missing. Update Apps Script history mode.");
+
+alert(
+"No historical rows returned.\nUpdate Apps Script for history mode."
+);
+
 }
 
-}catch(e){
+}
+
+catch(e){
+
 alert("Fetch Error");
+
 }
 
 }
+
 
 
 
 function plotC1(){
+
+let xField=
+document.getElementById("c1x").value;
+
+let yField=
+document.getElementById("c1y").value;
+
+
 drawPlot(
 "graph1",
-stats1,
-c1x.value,
-c1y.value,
-c1plot.value,
-c1reg.value
+xField,
+yField
 );
+
 }
+
+
 
 
 function plotC2(){
+
+let xField=
+document.getElementById("c2x").value;
+
+let yField=
+document.getElementById("c2y").value;
+
+
 drawPlot(
 "graph2",
-stats2,
-c2x.value,
-c2y.value,
-c2plot.value,
-c2reg.value
+xField,
+yField
 );
+
 }
 
 
 
-function drawPlot(div,statsDiv,xField,yField,ptype,reg){
+
+function drawPlot(div,xField,yField){
 
 if(fullData.length==0){
+
 alert("Load data first");
 return;
+
 }
 
 
-let x=fullData.map(r=>r[xField]);
+let x=
+fullData.map(
+r=>r[xField]
+);
+
 
 let y=
 fullData.map(
-r=>parseFloat(r[yField])||0
+r=>parseFloat(r[yField]) || 0
 );
-
-
-let numericX=
-y.map((v,i)=>i);
-
-
-let traces=[];
-
-
-traces.push({
-
-x:x,
-y:y,
-
-mode:
-ptype=="scatter"
-?"markers"
-:"lines+markers",
-
-name:"Actual"
-
-});
-
-
-
-if(reg=="linear"){
-
-let fit=linearRegression(numericX,y);
-
-let yhat=
-numericX.map(
-v=>fit.m*v+fit.b
-);
-
-traces.push({
-x:x,
-y:yhat,
-mode:"lines",
-name:"Linear Fit"
-});
-
-statsDiv.innerHTML=
-`
-<b>Slope:</b> ${fit.m.toFixed(4)}
-<br>
-<b>Intercept:</b> ${fit.b.toFixed(4)}
-<br>
-<b>R²:</b> ${fit.r2.toFixed(4)}
-`;
-
-}
-
-
-
-if(reg=="poly"){
-
-let smooth=
-movingAverage(y,5);
-
-traces.push({
-x:x,
-y:smooth,
-mode:"lines",
-name:"Polynomial Trend"
-});
-
-statsDiv.innerHTML=
-"Polynomial smoothed trend shown (useful nonlinear approximation)";
-
-}
-
-
-
-if(reg=="smooth"){
-
-let ma=
-movingAverage(y,8);
-
-traces.push({
-x:x,
-y:ma,
-mode:"lines",
-name:"Moving Average"
-});
-
-statsDiv.innerHTML=
-"Moving average smoothing active";
-
-}
 
 
 
 Plotly.newPlot(
-div,
-traces,
-{
 
+div,
+
+[
+{
+x:x,
+y:y,
+mode:"lines+markers",
+name:yField
+}
+],
+
+{
 title:
 yField+" vs "+xField,
 
@@ -509,142 +395,83 @@ yaxis:{
 title:yField
 },
 
-template:"plotly_dark",
+dragmode:"zoom",
 
-hovermode:"x unified",
-
-dragmode:"zoom"
+template:"plotly_dark"
 
 }
 
 );
 
-
 }
 
-
-
-function linearRegression(x,y){
-
-let n=x.length;
-
-let sx=0,sy=0,sxy=0,sxx=0;
-
-for(let i=0;i<n;i++){
-sx+=x[i];
-sy+=y[i];
-sxy+=x[i]*y[i];
-sxx+=x[i]*x[i];
-}
-
-let m=
-(n*sxy-sx*sy)/
-(n*sxx-sx*sx);
-
-let b=
-(sy-m*sx)/n;
-
-
-let ssRes=0;
-let mean=
-sy/n;
-let ssTot=0;
-
-for(let i=0;i<n;i++){
-
-let pred=
-m*x[i]+b;
-
-ssRes+=(y[i]-pred)**2;
-
-ssTot+=(y[i]-mean)**2;
-
-}
-
-let r2=
-1-(ssRes/ssTot);
-
-return {m,b,r2};
-
-}
-
-
-
-function movingAverage(arr,w){
-
-let out=[];
-
-for(let i=0;i<arr.length;i++){
-
-let s=0;
-let c=0;
-
-for(let j=i-w;j<=i+w;j++){
-
-if(j>=0&&j<arr.length){
-s+=arr[j];
-c++;
-}
-
-}
-
-out.push(s/c);
-
-}
-
-return out;
-
-}
 
 
 
 function loadCSV(){
 
-let file=fileInput.files[0];
+let file=
+document.getElementById("fileInput").files[0];
 
 if(!file) return;
 
-let reader=new FileReader();
+
+let reader=
+new FileReader();
+
 
 reader.onload=function(e){
 
 let lines=
 e.target.result.split("\n");
 
+
 let headers=
 lines[0].split(",");
 
+
 fullData=[];
 
-for(let i=1;i<lines.length;i++){
+
+for(
+let i=1;
+i<lines.length;
+i++
+){
 
 let vals=
 lines[i].split(",");
 
+
 let obj={};
+
 
 headers.forEach(
 (h,j)=>
 obj[h.trim()]=vals[j]
 );
 
+
 fullData.push(obj);
 
 }
 
+
 alert(
-"CSV loaded "+
+"CSV loaded: "+
 fullData.length+
 " rows"
 );
 
 };
 
+
 reader.readAsText(file);
 
 }
 
 </script>
+
 
 </body>
 </html>
