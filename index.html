@@ -93,7 +93,7 @@
   </div>
 
   <div class="main">
-    <div class="header"><h1>⚙️ Decanter Data Dashboard</h1></div>
+    <div class="header"><h1>⚙️ Decanter Parameter Dashboard</h1></div>
     <p id="time"><span class="time-live">✅ Live Data — </span>Last Updated: 22/04/2026 12:34:37</p>
 
     <!-- DEBUG PANEL -->
@@ -312,10 +312,10 @@ function updateUI(d, isLiveData) {
   const c1s = document.getElementById("c1_status");
   const c2s = document.getElementById("c2_status");
 
-  c1s.innerText = g(d, "C1_DecPos");
+  c1s.innerText = g(d, "C2_DecPos");
   c2s.innerText = g(d, "C2_DecPos");
 
-  c1s.className = "status " + getStatusColor(g(d, "C1_DecPos"));
+  c1s.className = "status " + getStatusColor(g(d, "C2_DecPos"));
   c2s.className = "status " + getStatusColor(g(d, "C2_DecPos"));
 
   // Update timestamp display
