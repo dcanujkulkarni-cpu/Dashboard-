@@ -4,14 +4,18 @@
 <head>
 <meta charset="UTF-8">
 <title>Advanced Decanter Trend Panel</title>
+
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
 <style>
+
 body{
 margin:0;
 font-family:Segoe UI;
 background:#0b1220;
 color:white;
 }
+
 header{
 background:#111827;
 padding:20px;
@@ -20,6 +24,7 @@ font-size:30px;
 font-weight:700;
 border-bottom:2px solid #1e293b;
 }
+
 .topbar{
 display:flex;
 gap:15px;
@@ -28,23 +33,30 @@ background:#111827;
 align-items:center;
 flex-wrap:wrap;
 }
+
 input,select,button{
 padding:10px 14px;
 border-radius:8px;
 border:none;
 font-size:14px;
 }
+
 select,input{
 background:#1e293b;
 color:white;
 }
+
 button{
 background:#2563eb;
 color:white;
 font-weight:bold;
 cursor:pointer;
 }
-button:hover{background:#1d4ed8;}
+
+button:hover{
+background:#1d4ed8;
+}
+
 .panel{
 margin:25px;
 background:#111827;
@@ -52,11 +64,13 @@ padding:25px;
 border-radius:15px;
 border:1px solid #334155;
 }
+
 .graph{
 height:650px;
 background:white;
 border-radius:10px;
 }
+
 .controlRow{
 display:flex;
 flex-wrap:wrap;
@@ -64,6 +78,7 @@ gap:12px;
 margin-bottom:18px;
 align-items:center;
 }
+
 .metric{
 background:#1e293b;
 padding:14px;
@@ -71,13 +86,38 @@ border-radius:10px;
 margin-top:18px;
 line-height:1.7;
 }
-.liveBadge{
+
+.liveWrap{
 margin-left:auto;
+display:flex;
+align-items:center;
+gap:8px;
 font-weight:700;
-color:#22c55e;
 }
+
+.liveDot{
+width:12px;
+height:12px;
+border-radius:50%;
+background:#22c55e;
+animation:pulse 1.4s infinite;
+display:none;
+}
+
+@keyframes pulse{
+0%{opacity:1}
+50%{opacity:0.3}
+100%{opacity:1}
+}
+
+.liveOff{
+background:#ef4444 !important;
+animation:none;
+}
+
 </style>
 </head>
+
 <body>
 
 <header>
@@ -85,26 +125,44 @@ color:#22c55e;
 </header>
 
 <div class="topbar">
+
 <label>Date:</label>
 <input type="date" id="datePick">
-<button onclick="loadSheetData()">Load Data</button>
-<button onclick="startLive()">▶ Start Live</button>
-<button onclick="stopLive()">⏸ Stop Live</button>
+
+<button onclick="loadSheetData()">
+Load Data
+</button>
+
+<button onclick="startLiveManual()">
+▶ Live Data
+</button>
+
+<button onclick="stopLive()">
+⏸ Stop Live
+</button>
 
 <input type="file" id="fileInput" accept=".csv">
-<button onclick="loadCSV()">Upload CSV</button>
 
-<span class="liveBadge" id="liveStatus">Idle</span>
+<button onclick="loadCSV()">
+Upload CSV
+</button>
+
+<div class="liveWrap">
+<div id="liveDot" class="liveDot"></div>
+<span id="liveStatus">Idle</span>
 </div>
 
+</div>
+
+
+
+<!-- BASIN 1 -->
+
 <div class="panel">
+
 <h2>⚙ Basin 1</h2>
 
 <div class="controlRow">
-<label>X Axis</label>
-<select id="c1x">
-<option value="Timestamp">Timestamp</option>
-</select>
 
 <label>Y1</label>
 <select id="c1y1"></select>
@@ -122,21 +180,26 @@ color:#22c55e;
 <option>Both</option>
 </select>
 
-<button onclick="plotC1()">Plot Basin 1</button>
+<button onclick="plotC1()">
+Plot Basin 1
+</button>
+
 </div>
 
 <div id="graph1" class="graph"></div>
 <div id="stats1" class="metric"></div>
+
 </div>
 
+
+
+<!-- BASIN 2 -->
+
 <div class="panel">
+
 <h2>⚙ Basin 2</h2>
 
 <div class="controlRow">
-<label>X Axis</label>
-<select id="c2x">
-<option value="Timestamp">Timestamp</option>
-</select>
 
 <label>Y1</label>
 <select id="c2y1"></select>
@@ -154,17 +217,30 @@ color:#22c55e;
 <option>Both</option>
 </select>
 
-<button onclick="plotC2()">Plot Basin 2</button>
+<button onclick="plotC2()">
+Plot Basin 2
+</button>
+
 </div>
 
 <div id="graph2" class="graph"></div>
 <div id="stats2" class="metric"></div>
+
 </div>
 
+
+
+
 <script>
-const BASE_URL="https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
+
+const BASE_URL=
+"https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
+
 let fullData=[];
 let liveTimer=null;
+let csvMode=false;
+
+
 
 const c1Fields=[
 "NONE",
@@ -194,126 +270,272 @@ const c2Fields=[
 "C2_Freq_Hz"
 ];
 
-function fillDropdown(id,arr,def){
+
+
+function fill(id,arr,def){
+
 let d=document.getElementById(id);
-arr.forEach(v=>d.add(new Option(v,v)));
+
+arr.forEach(v=>{
+d.add(new Option(v,v));
+});
+
 d.value=def;
+
 }
 
-fillDropdown('c1y1',c1Fields,'C1_Level');
-fillDropdown('c1y2',c1Fields,'C1_Power_kW');
-fillDropdown('c1y3',c1Fields,'NONE');
-fillDropdown('c2y1',c2Fields,'C2_Level');
-fillDropdown('c2y2',c2Fields,'C2_Power_kW');
-fillDropdown('c2y3',c2Fields,'NONE');
+fill('c1y1',c1Fields,'C1_Level');
+fill('c1y2',c1Fields,'C1_Power_kW');
+fill('c1y3',c1Fields,'NONE');
+
+fill('c2y1',c2Fields,'C2_Level');
+fill('c2y2',c2Fields,'C2_Power_kW');
+fill('c2y3',c2Fields,'NONE');
+
+
 
 function todayDefault(){
 let d=new Date();
-document.getElementById('datePick').value=
-d.toISOString().split('T')[0];
+datePick.value=
+d.toISOString().split("T")[0];
 }
 todayDefault();
 
+
+
 function selectedIsToday(){
-let d=new Date().toISOString().split('T')[0];
-return document.getElementById('datePick').value===d;
+
+let t=
+new Date()
+.toISOString()
+.split("T")[0];
+
+return datePick.value===t;
+
 }
 
-async function loadSheetData(){
-try{
-let date=document.getElementById('datePick').value;
-let url=BASE_URL+"?date="+date+"&history=1&t="+Date.now();
-let r=await fetch(url,{method:'GET',cache:'no-store'});
-let data=await r.json();
 
-if(data.rows){
-fullData=data.rows;
-document.getElementById('liveStatus').innerHTML=
-selectedIsToday()?"🟢 LIVE ":"Loaded "+fullData.length;
+
+function setLiveIndicator(on,text){
+
+let dot=
+document.getElementById("liveDot");
+
+let lbl=
+document.getElementById("liveStatus");
+
+dot.style.display="block";
+
+if(on){
+dot.classList.remove("liveOff");
+lbl.innerHTML="🟢 "+text;
+}
+else{
+dot.classList.add("liveOff");
+lbl.innerHTML=text;
+}
+
+}
+
+
+
+async function loadSheetData(){
+
+csvMode=false;
+
+try{
+
+let url=
+BASE_URL+
+"?date="+datePick.value+
+"&history=1&t="+Date.now();
+
+let r=await fetch(
+url,
+{cache:'no-store'}
+);
+
+let d=await r.json();
+
+if(d.rows){
+
+fullData=d.rows;
+
+plotC1();
+plotC2();
 
 if(selectedIsToday()){
 startLive();
-}else{
+}
+else{
 stopLive();
+setLiveIndicator(false,"Historical Mode");
 }
 
-plotC1();
-plotC2();
-}else{
-alert('No rows returned');
 }
+
 }catch(e){
-console.error(e); alert('Fetch error fixed version: check deployment access=Anyone. Code now uses no-cache and tolerant parsing.');
+
+alert("Fetch Error");
+
 }
+
 }
+
+
+
+async function loadSilent(){
+
+if(csvMode) return;
+
+let r=await fetch(
+BASE_URL+
+"?date="+datePick.value+
+"&history=1&t="+Date.now(),
+{cache:'no-store'}
+);
+
+let d=await r.json();
+
+if(d.rows){
+fullData=d.rows;
+}
+
+}
+
+
 
 function startLive(){
+
 stopLive();
-liveTimer=setInterval(async()=>{
-await loadSheetDataSilent();
+
+csvMode=false;
+
+setLiveIndicator(true,"LIVE");
+
+liveTimer=
+setInterval(
+async()=>{
+await loadSilent();
 plotC1();
 plotC2();
-},5000);
+},
+5000
+);
+
 }
+
+
+
+function startLiveManual(){
+
+csvMode=false;
+startLive();
+
+}
+
+
 
 function stopLive(){
-if(liveTimer) clearInterval(liveTimer);
+
+if(liveTimer)
+clearInterval(liveTimer);
+
+setLiveIndicator(false,"Stopped");
+
 }
 
-async function loadSheetDataSilent(){
-let date=document.getElementById('datePick').value;
-let url=BASE_URL+"?date="+date+"&history=1&t="+Date.now();
-let r=await fetch(url,{method:'GET',cache:'no-store'});
-let d=await r.json();
-if(d.rows) fullData=d.rows;
-}
+
 
 function loadCSV(){
-let file=document.getElementById('fileInput').files[0];
+
+let file=fileInput.files[0];
+
 if(!file) return;
-stopLive();
-let reader=new FileReader();
+
+
+stopLive();       // interlock
+csvMode=true;
+
+setLiveIndicator(
+false,
+"CSV Mode"
+);
+
+
+let reader=
+new FileReader();
+
 reader.onload=function(e){
-let lines=e.target.result.trim().split(/\r?\n/);
-let headers=lines[0].split(',');
+
+let lines=
+e.target.result.trim().split(/\r?\n/);
+
+let headers=
+lines[0].split(",");
+
 fullData=[];
+
 for(let i=1;i<lines.length;i++){
-let vals=lines[i].split(',');
+
+let vals=
+lines[i].split(",");
+
 let obj={};
-headers.forEach((h,j)=>obj[h.trim()]=vals[j]);
+
+headers.forEach(
+(h,j)=>
+obj[h.trim()]=vals[j]
+);
+
 fullData.push(obj);
-}
-plotC1();
-plotC2();
-};
-reader.readAsText(file);
+
 }
 
-function linearFit(y){
+plotC1();
+plotC2();
+
+};
+
+reader.readAsText(file);
+
+}
+
+
+
+function fitLine(y){
+
 let n=y.length;
 let sx=0,sy=0,sxy=0,sxx=0;
+
 for(let i=0;i<n;i++){
 sx+=i;
 sy+=y[i];
 sxy+=i*y[i];
 sxx+=i*i;
 }
-let m=(n*sxy-sx*sy)/(n*sxx-sx*sx||1);
-let b=(sy-m*sx)/n;
-let fit=[];
-for(let i=0;i<n;i++) fit.push(m*i+b);
 
-let mean=sy/n;
-let ssTot=0,ssRes=0;
+let m=
+(n*sxy-sx*sy)/
+(n*sxx-sx*sx||1);
+
+let b=
+(sy-m*sx)/n;
+
+let fit=[];
+
 for(let i=0;i<n;i++){
-ssTot+=(y[i]-mean)**2;
-ssRes+=(y[i]-fit[i])**2;
+fit.push(m*i+b);
 }
-let r2=1-ssRes/(ssTot||1);
-return {fit,m,b,r2};
+
+return {fit,m,b};
+
 }
+
+
 
 function plotC1(){
+
 plotMulti(
 'graph1',
 ['c1y1','c1y2','c1y3'],
@@ -321,9 +543,11 @@ plotMulti(
 'Basin 1',
 'stats1'
 );
+
 }
 
 function plotC2(){
+
 plotMulti(
 'graph2',
 ['c2y1','c2y2','c2y3'],
@@ -331,83 +555,180 @@ plotMulti(
 'Basin 2',
 'stats2'
 );
+
 }
 
-function plotMulti(div,selectIds,fitId,title,statsDiv){
+
+
+function plotMulti(
+div,
+selects,
+fitSel,
+title,
+statsDiv
+){
+
 if(!fullData.length){
-alert('Load data first');
 return;
 }
 
-let timestamps=fullData.map(r=>String(r.Timestamp||r.Time||''));
+
+let x=
+fullData.map(
+r=>new Date(
+(r.Timestamp||"")
+.replace(
+/(\d+)\/(\d+)\/(\d+)/,
+'$2/$1/$3'
+)
+)
+);
+
+
+
 let traces=[];
 let stats='';
 
-selectIds.forEach(id=>{
-let field=document.getElementById(id).value;
-if(field==='NONE') return;
 
-let y=fullData.map(r=>{
-let v=parseFloat(r[field])||0;
-if(field.includes('Freq')||field.includes('Torque')||field.includes('ActRPM')){
-v=Math.abs(v); // invert negatives to positive for plotting
+selects.forEach(id=>{
+
+let f=
+document.getElementById(id).value;
+
+if(f==="NONE") return;
+
+
+let y=
+fullData.map(r=>{
+
+let v=
+parseFloat(r[f])||0;
+
+if(
+f.includes("Freq")||
+f.includes("Torque")||
+f.includes("ActRPM")
+){
+v=Math.abs(v);
 }
-if(field.includes('Level')) v=v/1000; // mm to m
-return v;
-});
-let mode=document.getElementById(fitId).value;
 
-if(mode==='Raw Trend' || mode==='Both'){
+if(
+f.includes("Level")
+){
+v=v/1000;
+}
+
+return v;
+
+});
+
+
+let mode=
+document.getElementById(
+fitSel
+).value;
+
+
+
+if(
+mode==="Raw Trend"||
+mode==="Both"
+){
+
 traces.push({
-x:timestamps,
+x:x,
 y:y,
 mode:'lines',
-name:field
+name:f
 });
+
 }
 
-if(mode==='Ridge/Lasso Fit' || mode==='Both'){
-let reg=linearFit(y);
+
+if(
+mode==="Ridge/Lasso Fit"||
+mode==="Both"
+){
+
+let reg=
+fitLine(y);
+
 traces.push({
-x:timestamps,
+x:x,
 y:reg.fit,
 mode:'lines',
-name:field+' Ridge/Lasso Fit',
-line:{dash:'dash'}
-});
-stats+=`${field} → slope=${reg.m.toFixed(4)} intercept=${reg.b.toFixed(3)} R²=${reg.r2.toFixed(4)}<br>`;
+name:f+" Ridge/Lasso Fit",
+line:{
+dash:'dash'
 }
 });
+
+stats+=
+f+
+" slope="+
+reg.m.toFixed(4)+
+"<br>";
+
+}
+
+});
+
+
 
 Plotly.newPlot(
+
 div,
+
 traces,
+
 {
 title:title,
+
 template:'plotly_dark',
+
 hovermode:'x unified',
+
 xaxis:{
-title:'Timestamp',
-type:'category',
-tickangle:-35,
-automargin:true
+title:'Time',
+type:'date',
+tickformat:'%H:%M:%S',
+nticks:10,
+tickangle:-20
 },
-yaxis:{title:'Parameter'},
-legend:{orientation:'h'}
+
+yaxis:{
+title:'Parameter'
 },
+
+legend:{
+x:0.99,
+y:0.99,
+xanchor:'right',
+yanchor:'top',
+bgcolor:'rgba(0,0,0,0.35)'
+},
+
+margin:{
+b:90
+}
+
+},
+
 {responsive:true}
+
 );
 
-document.getElementById(statsDiv).innerHTML=
-stats || 'Raw trend mode selected.';
+document.getElementById(
+statsDiv
+).innerHTML=
+stats || "Raw trend mode";
+
 }
 
+
+
 loadSheetData();
-setInterval(()=>{
-if(selectedIsToday()){
-loadSheetDataSilent().then(()=>{plotC1();plotC2();});
-}
-},60000);
+
 </script>
 
 </body>
