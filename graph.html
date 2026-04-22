@@ -229,7 +229,7 @@ let data=await r.json();
 if(data.rows){
 fullData=data.rows;
 document.getElementById('liveStatus').innerHTML=
-selectedIsToday()?"🟢 LIVE STREAMING (5s refresh)":"Loaded "+fullData.length;
+selectedIsToday()?"🟢 LIVE ":"Loaded "+fullData.length;
 
 if(selectedIsToday()){
 startLive();
@@ -407,7 +407,7 @@ setInterval(()=>{
 if(selectedIsToday()){
 loadSheetDataSilent().then(()=>{plotC1();plotC2();});
 }
-},5000);
+},60000);
 </script>
 
 </body>
