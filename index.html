@@ -2,213 +2,466 @@
 <html>
 <head>
   <title>Decanter Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0b1220; color: white; }
+  .container { display: flex; min-height: 100vh; }
 
-  <style>
-    body { margin:0; font-family:Segoe UI; background:#0b1220; color:white; }
-    .container { display:flex; }
+  .sidebar {
+    width: 220px; background: #0f172a; padding: 20px 15px;
+    display: flex; flex-direction: column; gap: 12px;
+    border-right: 1px solid #1e293b;
+    position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto;
+  }
+  .sidebar h3 { font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+  .sidebar input[type="text"] {
+    width: 100%; padding: 9px 10px; background: #1e293b;
+    border: 1px solid #334155; border-radius: 6px; color: white; font-size: 14px; outline: none;
+  }
+  .sidebar input:focus { border-color: #3b82f6; }
+  .sidebar input::placeholder { color: #475569; }
+  .sidebar hr { border: none; border-top: 1px solid #1e293b; margin: 4px 0; }
+  .sidebar button {
+    width: 100%; padding: 10px; background: #2563eb; color: white;
+    border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600; margin-bottom: 6px;
+  }
+  .sidebar button:hover { background: #1d4ed8; }
+  .btn-debug { background: #7c3aed !important; }
+  .btn-debug:hover { background: #6d28d9 !important; }
+  .btn-clear { background: #dc2626 !important; font-size: 12px; }
+  .btn-clear:hover { background: #b91c1c !important; }
 
-    .sidebar {
-      width:250px; background:#111a2e; padding:15px;
-    }
+  .live-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; margin-top: auto; padding-top: 10px; border-top: 1px solid #1e293b; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; }
+  .dot.stale { background: #f59e0b; animation: none; }
+  .dot.error { background: #ef4444; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
 
-    input {
-      width:100%; padding:8px; margin-top:5px;
-      border-radius:5px; border:none;
-    }
+  .main { margin-left: 220px; flex: 1; padding: 24px 28px; }
+  .header { display: flex; align-items: center; margin-bottom: 6px; }
+  .header h1 { font-size: 22px; font-weight: 700; }
+  #time { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+  .time-live { color: #22c55e; font-weight: 600; }
+  .time-stale { color: #f59e0b; font-weight: 600; }
 
-    button {
-      width:100%; margin-top:10px; padding:8px;
-      border:none; border-radius:5px; cursor:pointer;
-    }
+  /* DEBUG */
+  #debugPanel {
+    background: #0f172a; border: 1px solid #7c3aed;
+    border-radius: 10px; padding: 16px; margin-bottom: 24px;
+  }
+  #debugPanel h3 { font-size: 13px; color: #a78bfa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  #debugStatus { font-size: 13px; color: #fbbf24; margin-bottom: 8px; padding: 8px 12px; background: #1e293b; border-radius: 6px; }
+  #debugRaw {
+    font-family: monospace; font-size: 12px; color: #86efac;
+    background: #020617; border-radius: 6px; padding: 12px;
+    max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+    border: 1px solid #1e293b;
+  }
 
-    .main { flex:1; padding:15px; }
+  .section { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #273449; }
+  .section h2 { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: #e2e8f0; }
 
-    .grid {
-      display:grid;
-      grid-template-columns:repeat(5,1fr);
-      gap:10px;
-    }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .card { background: #020617; border: 1px solid #1e293b; padding: 12px 10px; border-radius: 8px; text-align: center; }
+  .card-label { font-size: 11px; color: #94a3b8; }
+  .card-unit { font-size: 10px; color: #3b82f6; background: #1e3a5f; border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
+  .card-value { display: block; margin-top: 6px; font-size: 16px; font-weight: 700; color: #f1f5f9; }
 
-    .card {
-      background:#111a2e; padding:10px;
-      border-radius:6px; text-align:center;
-    }
-
-    .card-label { font-size:12px; color:#aaa; }
-    .card-value { font-size:18px; font-weight:bold; }
-
-    .status-row { margin-top:10px; }
-    .status { padding:8px; border-radius:5px; text-align:center; }
-
-    .green { background:#1b5e20; }
-    .red { background:#b71c1c; }
-    .yellow { background:#f57f17; }
-
-    .dot {
-      width:10px; height:10px; border-radius:50%;
-      display:inline-block;
-    }
-
-    .live-badge { margin-top:15px; }
-  </style>
+  .status-row { display: flex; gap: 10px; margin-top: 10px; }
+  .status { flex: 1; padding: 9px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; text-align: center; transition: background 0.3s; }
+  .status.green  { background: #065f46; color: #d1fae5; }
+  .status.red    { background: #7f1d1d; color: #fee2e2; }
+  .status.yellow { background: #78350f; color: #fef3c7; }
+</style>
 </head>
 
 <body>
-
 <div class="container">
 
   <div class="sidebar">
     <h3>📅 Select Date</h3>
-
-    <!-- TEXT INPUT (CONTROLLED FORMAT) -->
     <input type="text" id="datePicker" placeholder="YYYY-MM-DD" maxlength="10">
-
-    <button onclick="fetchData()">🔄 Refresh</button>
-
+    <hr>
+    <button onclick="fetchData()">🔄 Refresh Now</button>
+    <button onclick="openGraphPage()">📊 Open Graph Panel</button>
+    <button class="btn-debug" onclick="toggleDebug()">🔍 Toggle Debug</button>
+    <button class="btn-clear" onclick="clearStoredData()">🗑️ Clear Cache</button>
     <div class="live-badge">
-      <div class="dot red" id="liveDot"></div>
-      <span id="liveLabel">🔴 Error</span>
+      <div class="dot" id="liveDot"></div>
+      <span id="liveLabel">🟢 Live Data</span>
     </div>
   </div>
 
   <div class="main">
+    <div class="header"><h1>⚙️ Decanter Data Dashboard</h1></div>
+    <p id="time"><span class="time-live">✅ Live Data — </span>Last Updated: 22/04/2026 12:34:37</p>
 
-    <h1>⚙️ Decanter Dashboard</h1>
-    <p id="time">Loading...</p>
-
-    <!-- C1 -->
-    <h2>C-Tech 1</h2>
-    <div class="grid">
-      <div class="card"><span class="card-label">Level</span><div id="c1_lvl">--</div></div>
-      <div class="card"><span class="card-label">Inflow</span><div id="c1_flow">--</div></div>
-      <div class="card"><span class="card-label">Set RPM</span><div id="c1_setrpm">--</div></div>
-      <div class="card"><span class="card-label">Actual RPM</span><div id="c1_rpm">--</div></div>
-      <div class="card"><span class="card-label">Current</span><div id="c1_cur">--</div></div>
-      <div class="card"><span class="card-label">Power</span><div id="c1_pow">--</div></div>
-      <div class="card"><span class="card-label">Torque</span><div id="c1_tor">--</div></div>
-      <div class="card"><span class="card-label">Frequency</span><div id="c1_freq">--</div></div>
-      <div class="card"><span class="card-label">Cycle Total</span><div id="c1_ctot">--</div></div>
-      <div class="card"><span class="card-label">Cycle Rem</span><div id="c1_crem">--</div></div>
-    </div>
-    <div class="status-row">
-      <div class="status yellow" id="c1_status">--</div>
+    <!-- DEBUG PANEL -->
+    <div id="debugPanel" style="display: none;">
+      <h3>🔍 Debug Panel — API &amp; Data Status</h3>
+      <div id="debugStatus">✅ API Response Received</div>
+      <div id="debugRaw">{<br>  "success": true,<br>  "date": "2026-04-22",<br>  "lastData": {<br>    "Timestamp": "22/04/2026 12:34:37",<br>    "C1_Level": 3290,<br>    "C1_Inflow": 35,<br>    "C1_DecPos": "REMOTE | RUNNING_UP",<br>    "C1_CycleStat": "IDLE",<br>    "C1_CycleTot": 10800,<br>    "C1_CycleRem": 5285,<br>    "C1_SetRPM": 0,<br>    "C1_ActRPM": 0,<br>    "C1_Current_A": 0,<br>    "C1_Power_kW": 0,<br>    "C1_Torque_Nm": 0,<br>    "C1_Freq_Hz": 0,<br>    "C2_Level": 3411,<br>    "C2_Inflow": 0,<br>    "C2_DecPos": "REMOTE | HEALTHY | POSITION_PARKED",<br>    "C2_CycleStat": "IDLE",<br>    "C2_CycleTot": 10800,<br>    "C2_CycleRem": 10685,<br>    "C2_SetRPM": 0,<br>    "C2_ActRPM": 0,<br>    "C2_Current_A": 0,<br>    "C2_Power_kW": 0,<br>    "C2_Torque_Nm": 0,<br>    "C2_Freq_Hz": 0<br>  }<br>}</div>
     </div>
 
-    <!-- C2 -->
-    <h2>C-Tech 2</h2>
-    <div class="grid">
-      <div class="card"><span class="card-label">Level</span><div id="c2_lvl">--</div></div>
-      <div class="card"><span class="card-label">Inflow</span><div id="c2_flow">--</div></div>
-      <div class="card"><span class="card-label">Set RPM</span><div id="c2_setrpm">--</div></div>
-      <div class="card"><span class="card-label">Actual RPM</span><div id="c2_rpm">--</div></div>
-      <div class="card"><span class="card-label">Current</span><div id="c2_cur">--</div></div>
-      <div class="card"><span class="card-label">Power</span><div id="c2_pow">--</div></div>
-      <div class="card"><span class="card-label">Torque</span><div id="c2_tor">--</div></div>
-      <div class="card"><span class="card-label">Frequency</span><div id="c2_freq">--</div></div>
-      <div class="card"><span class="card-label">Cycle Total</span><div id="c2_ctot">--</div></div>
-      <div class="card"><span class="card-label">Cycle Rem</span><div id="c2_crem">--</div></div>
-    </div>
-    <div class="status-row">
-      <div class="status yellow" id="c2_status">--</div>
+    <!-- C-Tech 1 -->
+    <div class="section">
+      <h2>C-Tech 1</h2>
+      <div class="grid">
+        <div class="card"><span class="card-label">Level<span class="card-unit">mm</span></span><span class="card-value" id="c1_lvl">3290</span></div>
+        <div class="card"><span class="card-label">Inflow<span class="card-unit">m³/h</span></span><span class="card-value" id="c1_flow">35</span></div>
+        <div class="card"><span class="card-label">Set RPM<span class="card-unit">RPM</span></span><span class="card-value" id="c1_setrpm">0</span></div>
+        <div class="card"><span class="card-label">Actual RPM<span class="card-unit">RPM</span></span><span class="card-value" id="c1_rpm">0</span></div>
+        <div class="card"><span class="card-label">Current<span class="card-unit">A</span></span><span class="card-value" id="c1_cur">0</span></div>
+        <div class="card"><span class="card-label">Power<span class="card-unit">kW</span></span><span class="card-value" id="c1_pow">0</span></div>
+        <div class="card"><span class="card-label">Torque<span class="card-unit">Nm</span></span><span class="card-value" id="c1_tor">0</span></div>
+        <div class="card"><span class="card-label">Frequency<span class="card-unit">Hz</span></span><span class="card-value" id="c1_freq">0</span></div>
+        <div class="card"><span class="card-label">Cycle Total<span class="card-unit">min</span></span><span class="card-value" id="c1_ctot">10800</span></div>
+        <div class="card"><span class="card-label">Cycle Remaining<span class="card-unit">min</span></span><span class="card-value" id="c1_crem">5285</span></div>
+      </div>
+      <div class="status-row">
+        <div class="status green" id="c1_status">REMOTE | RUNNING_UP</div>
+      </div>
     </div>
 
+    <!-- C-Tech 2 -->
+    <div class="section">
+      <h2>C-Tech 2</h2>
+      <div class="grid">
+        <div class="card"><span class="card-label">Level<span class="card-unit">mm</span></span><span class="card-value" id="c2_lvl">3411</span></div>
+        <div class="card"><span class="card-label">Inflow<span class="card-unit">m³/h</span></span><span class="card-value" id="c2_flow">0</span></div>
+        <div class="card"><span class="card-label">Set RPM<span class="card-unit">RPM</span></span><span class="card-value" id="c2_setrpm">0</span></div>
+        <div class="card"><span class="card-label">Actual RPM<span class="card-unit">RPM</span></span><span class="card-value" id="c2_rpm">0</span></div>
+        <div class="card"><span class="card-label">Current<span class="card-unit">A</span></span><span class="card-value" id="c2_cur">0</span></div>
+        <div class="card"><span class="card-label">Power<span class="card-unit">kW</span></span><span class="card-value" id="c2_pow">0</span></div>
+        <div class="card"><span class="card-label">Torque<span class="card-unit">Nm</span></span><span class="card-value" id="c2_tor">0</span></div>
+        <div class="card"><span class="card-label">Frequency<span class="card-unit">Hz</span></span><span class="card-value" id="c2_freq">0</span></div>
+        <div class="card"><span class="card-label">Cycle Total<span class="card-unit">min</span></span><span class="card-value" id="c2_ctot">10800</span></div>
+        <div class="card"><span class="card-label">Cycle Remaining<span class="card-unit">min</span></span><span class="card-value" id="c2_crem">10685</span></div>
+      </div>
+      <div class="status-row">
+        <div class="status green" id="c2_status">REMOTE | HEALTHY | POSITION_PARKED</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-
-// ================= CONFIG =================
+// ============================================================
+// CONFIGURATION - REPLACE WITH YOUR APPS SCRIPT URL
+// ============================================================
 const BASE_URL = "https://script.google.com/macros/s/AKfycbw5UXnwLXehPLf8ots1zp4aYrkIFYOlM1SMddbzUUjrzviynH4ogyKL0RdeRhd7SBZ3/exec";
+const FETCH_INTERVAL = 60000; // 60 seconds
+const CACHE_KEY = "decanter_last_data";
+const CACHE_TIMESTAMP_KEY = "decanter_last_timestamp";
 
-// ================= DATE FIX =================
+// ============================================================
+// STATE
+// ============================================================
+let lastValidData = null;
+let lastFetchTime = null;
+let debugVisible = false;
+let isLive = false;
+
+// ============================================================
+// LOCAL STORAGE FUNCTIONS
+// ============================================================
+function saveToCache(data) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(CACHE_TIMESTAMP_KEY, new Date().toISOString());
+  } catch(e) {
+    console.warn("Cache save failed:", e);
+  }
+}
+
+function getFromCache() {
+  try {
+    const data = localStorage.getItem(CACHE_KEY);
+    const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    if (data) {
+      return { data: JSON.parse(data), timestamp: timestamp };
+    }
+  } catch(e) {
+    console.warn("Cache read failed:", e);
+  }
+  return null;
+}
+
+function clearStoredData() {
+  localStorage.removeItem(CACHE_KEY);
+  localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+  debugLog("✅ Cache cleared", "");
+  alert("Cache cleared. Refresh page to start fresh.");
+}
+
+// ============================================================
+// LOGGING & DEBUG
+// ============================================================
+function debugLog(statusMsg, dataObj) {
+  document.getElementById("debugStatus").innerText = statusMsg;
+  document.getElementById("debugRaw").innerText =
+    typeof dataObj === "string" ? dataObj : JSON.stringify(dataObj, null, 2);
+}
+
+function toggleDebug() {
+  debugVisible = !debugVisible;
+  document.getElementById("debugPanel").style.display = debugVisible ? "block" : "none";
+}
+
+function formatTimestamp(isoString) {
+  const date = new Date(isoString);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
+
+// ============================================================
+// STATUS & COLOR LOGIC
+// ============================================================
+function getStatusColor(text) {
+  if (!text || text === "--") return "yellow";
+  const t = text.toUpperCase();
+  if (t.includes("RUN") || t.includes("RUNNING") || t.includes("HEALTHY") || t.includes("OPERATING")) return "green";
+  if (t.includes("FAULT") || t.includes("ERROR") || t.includes("FAIL")) return "red";
+  return "yellow";
+}
+
+function setLiveIndicator(state) {
+  const dot = document.getElementById("liveDot");
+  const lbl = document.getElementById("liveLabel");
+  
+  dot.className = "dot" + (state !== "live" ? " " + state : "");
+  
+  if (state === "live") {
+    lbl.innerText = "🟢 Live Data";
+  } else if (state === "stale") {
+    lbl.innerText = "🟡 Last Known";
+  } else if (state === "error") {
+    lbl.innerText = "🔴 Error";
+  } else {
+    lbl.innerText = state;
+  }
+  
+  isLive = (state === "live");
+}
+
+// ============================================================
+// DATA RETRIEVAL
+// ============================================================
+function getFormattedDate() {
+  const v = document.getElementById("datePicker").value.trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
+}
+
 function setTodayDate() {
   const t = new Date();
-  const yyyy = t.getFullYear();
   const mm = String(t.getMonth() + 1).padStart(2, '0');
   const dd = String(t.getDate()).padStart(2, '0');
-
-  document.getElementById("datePicker").value = `${yyyy}-${mm}-${dd}`;
+  document.getElementById("datePicker").value = `${t.getFullYear()}-${mm}-${dd}`;
 }
 
-// Auto-correct DD-MM-YYYY → YYYY-MM-DD
-function normalizeDate(v) {
-  const m = v.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-  return v;
+// Case-insensitive property getter
+function g(d, key) {
+  if (!d) d = {};
+  if (d[key] !== undefined && d[key] !== null && d[key] !== "") return String(d[key]);
+  const lk = key.toLowerCase();
+  for (const k of Object.keys(d)) {
+    if (k.toLowerCase() === lk && d[k] !== "" && d[k] !== null && d[k] !== undefined) {
+      return String(d[k]);
+    }
+  }
+  return "--";
 }
 
-function getDate() {
-  let v = document.getElementById("datePicker").value.trim();
-  v = normalizeDate(v);
-  document.getElementById("datePicker").value = v;
+// ============================================================
+// UI UPDATE
+// ============================================================
+function updateUI(d, isLiveData) {
+  if (!d) d = {};
+  
+  // C1
+  document.getElementById("c1_lvl").innerText = g(d, "C1_Level");
+  document.getElementById("c1_flow").innerText = g(d, "C1_Inflow");
+  document.getElementById("c1_setrpm").innerText = g(d, "C1_SetRPM");
+  document.getElementById("c1_rpm").innerText = g(d, "C1_ActRPM");
+  document.getElementById("c1_cur").innerText = g(d, "C1_Current_A");
+  document.getElementById("c1_pow").innerText = g(d, "C1_Power_kW");
+  document.getElementById("c1_tor").innerText = g(d, "C1_Torque_Nm");
+  document.getElementById("c1_freq").innerText = g(d, "C1_Freq_Hz");
+  document.getElementById("c1_ctot").innerText = g(d, "C1_CycleTot");
+  document.getElementById("c1_crem").innerText = g(d, "C1_CycleRem");
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  // C2
+  document.getElementById("c2_lvl").innerText = g(d, "C2_Level");
+  document.getElementById("c2_flow").innerText = g(d, "C2_Inflow");
+  document.getElementById("c2_setrpm").innerText = g(d, "C2_SetRPM");
+  document.getElementById("c2_rpm").innerText = g(d, "C2_ActRPM");
+  document.getElementById("c2_cur").innerText = g(d, "C2_Current_A");
+  document.getElementById("c2_pow").innerText = g(d, "C2_Power_kW");
+  document.getElementById("c2_tor").innerText = g(d, "C2_Torque_Nm");
+  document.getElementById("c2_freq").innerText = g(d, "C2_Freq_Hz");
+  document.getElementById("c2_ctot").innerText = g(d, "C2_CycleTot");
+  document.getElementById("c2_crem").innerText = g(d, "C2_CycleRem");
 
-  document.getElementById("time").innerText = "⚠️ Use YYYY-MM-DD format";
-  return "";
+  const c1s = document.getElementById("c1_status");
+  const c2s = document.getElementById("c2_status");
+
+  c1s.innerText = g(d, "C1_DecPos");
+  c2s.innerText = g(d, "C2_DecPos");
+
+  c1s.className = "status " + getStatusColor(g(d, "C1_DecPos"));
+  c2s.className = "status " + getStatusColor(g(d, "C2_DecPos"));
+
+  // Update timestamp display
+  const ts = g(d, "Timestamp") || g(d, "Time") || g(d, "Date") || "No timestamp";
+  const timeElement = document.getElementById("time");
+  
+  if (isLiveData) {
+    timeElement.innerHTML = `<span class="time-live">✅ Live Data — </span>Last Updated: ${ts}`;
+    setLiveIndicator("live");
+  } else {
+    timeElement.innerHTML = `<span class="time-stale">⚠️ Cached Data — </span>Last Available: ${ts}`;
+    setLiveIndicator("stale");
+  }
+  
+  lastValidData = d;
+  lastFetchTime = new Date();
 }
 
-// ================= UI =================
-function g(d, k) { return d[k] ?? "--"; }
-
-function updateUI(d) {
-  document.getElementById("c1_lvl").innerText = g(d,"C1_Level");
-  document.getElementById("c1_flow").innerText = g(d,"C1_Inflow");
-  document.getElementById("c1_setrpm").innerText = g(d,"C1_SetRPM");
-  document.getElementById("c1_rpm").innerText = g(d,"C1_ActRPM");
-  document.getElementById("c1_cur").innerText = g(d,"C1_Current_A");
-  document.getElementById("c1_pow").innerText = g(d,"C1_Power_kW");
-  document.getElementById("c1_tor").innerText = g(d,"C1_Torque_Nm");
-  document.getElementById("c1_freq").innerText = g(d,"C1_Freq_Hz");
-  document.getElementById("c1_ctot").innerText = g(d,"C1_CycleTot");
-  document.getElementById("c1_crem").innerText = g(d,"C1_CycleRem");
-
-  document.getElementById("c2_lvl").innerText = g(d,"C2_Level");
-  document.getElementById("c2_flow").innerText = g(d,"C2_Inflow");
-  document.getElementById("c2_setrpm").innerText = g(d,"C2_SetRPM");
-  document.getElementById("c2_rpm").innerText = g(d,"C2_ActRPM");
-  document.getElementById("c2_cur").innerText = g(d,"C2_Current_A");
-  document.getElementById("c2_pow").innerText = g(d,"C2_Power_kW");
-  document.getElementById("c2_tor").innerText = g(d,"C2_Torque_Nm");
-  document.getElementById("c2_freq").innerText = g(d,"C2_Freq_Hz");
-  document.getElementById("c2_ctot").innerText = g(d,"C2_CycleTot");
-  document.getElementById("c2_crem").innerText = g(d,"C2_CycleRem");
-
-  document.getElementById("c1_status").innerText = g(d,"C1_DecPos");
-  document.getElementById("c2_status").innerText = g(d,"C2_DecPos");
-
-  document.getElementById("time").innerText =
-    "Last Updated: " + (d.Timestamp || "--");
-}
-
-// ================= FETCH =================
+// ============================================================
+// FETCH DATA USING STANDARD FETCH API
+// ============================================================
 function fetchData() {
-  const date = getDate();
+  const date = getFormattedDate();
+  
+  document.getElementById("time").innerText = "🔄 Fetching data...";
+  
   let url = BASE_URL;
-  if (date) url += "?date=" + date;
-
-  fetch(url)
-    .then(r => r.json())
-    .then(res => {
-      if (!res.success) {
-        document.getElementById("time").innerText = res.message;
-        return;
-      }
-      updateUI(res.lastData);
-    })
-    .catch(() => {
-      document.getElementById("time").innerText = "❌ Connection Error";
-    });
+  if (date) url += "?date=" + encodeURIComponent(date);
+  
+  fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    handleFetchSuccess(data);
+  })
+  .catch(error => {
+    console.error("Fetch error:", error);
+    handleFetchError(error);
+  });
 }
 
-// ================= INIT =================
-window.onload = () => {
+function handleFetchSuccess(data) {
+  try {
+    debugLog("✅ API Response Received", data);
+    
+    if (!data || !data.success) {
+      throw new Error(data.message || "API returned success=false");
+    }
+    
+    if (!data.lastData || Object.keys(data.lastData).length === 0) {
+      throw new Error("No data in response");
+    }
+    
+    // Save to cache and update UI
+    saveToCache(data.lastData);
+    updateUI(data.lastData, true); // true = live data
+    
+  } catch(e) {
+    console.error("Response processing error:", e);
+    debugLog("⚠️ Response parsing error: " + e.message, data);
+    fallbackToCache();
+  }
+}
+
+function handleFetchError(error) {
+  const errorMsg = error.message || "Unknown error";
+  debugLog("❌ Fetch failed: " + errorMsg, {
+    error: errorMsg,
+    url: BASE_URL,
+    timestamp: new Date().toISOString()
+  });
+  fallbackToCache();
+}
+
+function fallbackToCache() {
+  const cached = getFromCache();
+  
+  if (cached && cached.data) {
+    updateUI(cached.data, false); // false = cached/stale data
+    debugLog("📦 Using cached data from: " + formatTimestamp(cached.timestamp), cached.data);
+  } else {
+    document.getElementById("time").innerText = "❌ No live data & no cache found";
+    setLiveIndicator("error");
+    debugLog("❌ Cannot fetch data & no cache available", {
+      message: "Ensure your Google Apps Script is deployed and returns JSON",
+      steps: [
+        "1. Update BASE_URL with your Apps Script endpoint",
+        "2. Ensure doGet() function is in your Apps Script",
+        "3. Deploy as web app (Execute as: Me, Who has access: Anyone)",
+        "4. Check browser console (F12) for detailed errors"
+      ]
+    });
+  }
+}
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+function initDashboard() {
   setTodayDate();
+  
+  // Check for cached data first
+  const cached = getFromCache();
+  if (cached && cached.data) {
+    updateUI(cached.data, false);
+    debugLog("📦 Loaded from cache on startup", cached.data);
+  } else {
+    document.getElementById("time").innerText = "⏳ No data yet. Fetching...";
+    setLiveIndicator("error");
+  }
+  
+  // Fetch fresh data
   fetchData();
-  setInterval(fetchData, 5000);
-};
+  
+  // Setup auto-refresh every 60 seconds
+  setInterval(fetchData, FETCH_INTERVAL);
+  
+  // Setup date picker listener
+  document.getElementById("datePicker").addEventListener("input", function() {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(this.value.trim())) {
+      fetchData();
+    }
+  });
+}
+
+// Start dashboard
+window.addEventListener("DOMContentLoaded", initDashboard);
+initDashboard();
+
+function openGraphPage() {
+  const date = getFormattedDate();
+  window.open("graph.html" + (date ? "?date=" + date : ""), "_blank");
+}
 
 </script>
+
+
 
 </body>
 </html>
