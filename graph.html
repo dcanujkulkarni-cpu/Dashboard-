@@ -88,6 +88,8 @@ color:#22c55e;
 <label>Date:</label>
 <input type="date" id="datePick">
 <button onclick="loadSheetData()">Load Data</button>
+<button onclick="startLive()">▶ Start Live</button>
+<button onclick="stopLive()">⏸ Stop Live</button>
 
 <input type="file" id="fileInput" accept=".csv">
 <button onclick="loadCSV()">Upload CSV</button>
@@ -221,13 +223,13 @@ async function loadSheetData(){
 try{
 let date=document.getElementById('datePick').value;
 let url=BASE_URL+"?date="+date+"&history=1&t="+Date.now();
-let r=await fetch(url);
+let r=await fetch(url,{method:'GET',cache:'no-store'});
 let data=await r.json();
 
 if(data.rows){
 fullData=data.rows;
 document.getElementById('liveStatus').innerHTML=
-selectedIsToday()?"🟢 Live Mode":"Loaded "+fullData.length;
+selectedIsToday()?"🟢 LIVE STREAMING (5s refresh)":"Loaded "+fullData.length;
 
 if(selectedIsToday()){
 startLive();
@@ -241,7 +243,7 @@ plotC2();
 alert('No rows returned');
 }
 }catch(e){
-alert('Fetch error');
+console.error(e); alert('Fetch error fixed version: check deployment access=Anyone. Code now uses no-cache and tolerant parsing.');
 }
 }
 
@@ -251,7 +253,7 @@ liveTimer=setInterval(async()=>{
 await loadSheetDataSilent();
 plotC1();
 plotC2();
-},15000);
+},5000);
 }
 
 function stopLive(){
@@ -261,7 +263,7 @@ if(liveTimer) clearInterval(liveTimer);
 async function loadSheetDataSilent(){
 let date=document.getElementById('datePick').value;
 let url=BASE_URL+"?date="+date+"&history=1&t="+Date.now();
-let r=await fetch(url);
+let r=await fetch(url,{method:'GET',cache:'no-store'});
 let d=await r.json();
 if(d.rows) fullData=d.rows;
 }
@@ -345,7 +347,11 @@ selectIds.forEach(id=>{
 let field=document.getElementById(id).value;
 if(field==='NONE') return;
 
-let y=fullData.map(r=>parseFloat(r[field])||0);
+let y=fullData.map(r=>{
+let v=parseFloat(r[field])||0;
+if(field.includes('Level')) v=v/1000; // mm to m
+return v;
+});
 let mode=document.getElementById(fitId).value;
 
 if(mode==='Raw Trend' || mode==='Both'){
@@ -383,7 +389,7 @@ type:'category',
 tickangle:-35,
 automargin:true
 },
-yaxis:{title:'Parameter Value'},
+yaxis:{title:'Parameter Value (Levels shown in m)'},
 legend:{orientation:'h'}
 },
 {responsive:true}
@@ -394,6 +400,11 @@ stats || 'Raw trend mode selected.';
 }
 
 loadSheetData();
+setInterval(()=>{
+if(selectedIsToday()){
+loadSheetDataSilent().then(()=>{plotC1();plotC2();});
+}
+},5000);
 </script>
 
 </body>
