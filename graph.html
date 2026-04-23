@@ -572,7 +572,6 @@ if(!fullData.length){
 return;
 }
 
-
 let x=
 fullData.map(
 r=>new Date(
@@ -584,13 +583,14 @@ r=>new Date(
 )
 );
 
-
-
 let traces=[];
 let stats='';
 
+let useSecondaryAxis=false;
 
-selects.forEach(id=>{
+
+
+selects.forEach((id,index)=>{
 
 let f=
 document.getElementById(id).value;
@@ -604,6 +604,7 @@ fullData.map(r=>{
 let v=
 parseFloat(r[f])||0;
 
+
 if(
 f.includes("Freq")||
 f.includes("Torque")||
@@ -612,9 +613,8 @@ f.includes("ActRPM")
 v=Math.abs(v);
 }
 
-if(
-f.includes("Level")
-){
+
+if(f.includes("Level")){
 v=v/1000;
 }
 
@@ -623,12 +623,28 @@ return v;
 });
 
 
+let ymax=Math.max(...y);
+let ymin=Math.min(...y);
+let range=ymax-ymin;
+
+
+if(ymax>500){
+useSecondaryAxis=true;
+}
+
+
+let axisName=
+(ymax>500) ? "y2":"y";
+
+
 let mode=
 document.getElementById(
 fitSel
 ).value;
 
 
+
+/* ---------- RAW TREND ---------- */
 
 if(
 mode==="Raw Trend"||
@@ -639,28 +655,57 @@ traces.push({
 x:x,
 y:y,
 mode:'lines',
-name:f
+name:f,
+yaxis:axisName
 });
 
 }
 
+
+
+/* ---------- RIDGE/LASSO FIT ---------- */
 
 if(
 mode==="Ridge/Lasso Fit"||
 mode==="Both"
 ){
 
-let reg=
-fitLine(y);
+let reg=fitLine(y);
+
+
+/* normalize fit to variable scale */
+let fit=reg.fit.slice();
+
+let fmax=Math.max(...fit);
+let fmin=Math.min(...fit);
+let frange=fmax-fmin || 1;
+
+
+/*
+Scale fit back to
+actual variable range
+(keeps fit visible for all)
+*/
+let scaledFit=
+fit.map(v=>
+((v-fmin)/frange)*range+ymin
+);
+
+
 
 traces.push({
+
 x:x,
-y:reg.fit,
+y:scaledFit,
 mode:'lines',
 name:f+" Ridge/Lasso Fit",
+yaxis:axisName,
+
 line:{
-dash:'dash'
+dash:'dash',
+width:3
 }
+
 });
 
 stats+=
@@ -700,6 +745,14 @@ yaxis:{
 title:'Parameter'
 },
 
+/* Secondary axis for large signals */
+yaxis2:{
+title:'High Range Parameters',
+overlaying:'y',
+side:'right',
+showgrid:false
+},
+
 legend:{
 x:0.99,
 y:0.99,
@@ -724,7 +777,6 @@ statsDiv
 stats || "Raw trend mode";
 
 }
-
 
 
 loadSheetData();
