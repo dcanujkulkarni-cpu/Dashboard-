@@ -319,25 +319,21 @@ function updateUI(d, isLiveData) {
   c2s.className = "status " + getStatusColor(g(d, "C2_DecPos"));
 
   // Update timestamp display
-  let rawTs = g(d, "Timestamp") || g(d, "Time") || g(d, "Date");
-
-let formattedTime = "No timestamp";
-
-    if (rawTs && rawTs !== "--") {
-      const dateObj = new Date(rawTs);
-    
-      // Format: HH:mm:ss (24-hour)
-      formattedTime = dateObj.toLocaleTimeString('en-IN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      });
-    }
+  const now = new Date();
+  
+  const ts = now.toLocaleString('en-IN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
   const timeElement = document.getElementById("time");
   
   if (isLiveData) {
-    timeElement.innerHTML = `<span class="time-live">✅ Live Data — </span>Last Updated: ${formattedTime}`;
+    timeElement.innerHTML = `<span class="time-live">✅ Live Data — </span>Last Updated: ${ts}`;
     setLiveIndicator("live");
   } else {
     timeElement.innerHTML = `<span class="time-stale">⚠️ Cached Data — </span>Last Available: ${ts}`;
