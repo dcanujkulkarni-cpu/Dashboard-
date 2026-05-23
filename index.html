@@ -312,10 +312,10 @@ function updateUI(d, isLiveData) {
   const c1s = document.getElementById("c1_status");
   const c2s = document.getElementById("c2_status");
 
-  c1s.innerText = g(d, "C2_DecPos");
+  c1s.innerText = g(d, "C1_DecPos");
   c2s.innerText = g(d, "C2_DecPos");
 
-  c1s.className = "status " + getStatusColor(g(d, "C2_DecPos"));
+  c1s.className = "status " + getStatusColor(g(d, "C1_DecPos"));
   c2s.className = "status " + getStatusColor(g(d, "C2_DecPos"));
 
   // Update timestamp display
